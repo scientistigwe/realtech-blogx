@@ -1,0 +1,28 @@
+version: '3'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.3
+    container_name: elasticsearch
+    environment:
+      - node.name=es01
+      - cluster.name=es-cluster
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=changeme
+    ports:
+      - "9200:9200"
+    networks:
+      - elasticsearch-network
+
+  search-service:
+    build: .
+    container_name: search-service
+    depends_on:
+      - elasticsearch
+    ports:
+      - "8000:8000"
+    networks:
+      - elasticsearch-network
+
+networks:
+  elasticsearch-network:
+    driver: bridge

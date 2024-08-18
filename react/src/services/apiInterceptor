@@ -1,0 +1,152 @@
+import {
+  needsAuthentication,
+  AUTH_TYPES,
+  getAuthTypeForEndpoint,
+} from "./apiConfig";
+import * as authService from "../services/authService";
+import apiClientBase from "./apiClientBase";
+
+const apiClient = apiClientBase;
+const isDevelopment = process.env.NODE_ENV === "development";
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+function devLog(...args) {
+  if (isDevelopment) {
+    console.log(...args);
+  }
+}
+
+function devError(...args) {
+  if (isDevelopment) {
+    console.error(...args);
+  }
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+class APIError extends Error {
+  constructor(message, status, originalError) {
+    super(message);
+    this.name = "APIError";
+    this.status = status;
+    this.originalError = originalError;
+  }
+}
+
+async function ensureAuthentication(config) {
+  const authType = getAuthTypeForEndpoint(config.url);
+  devLog(`Auth type for ${config.url}: ${authType}`);
+
+  if (
+    authType === AUTH_TYPES.ALWAYS ||
+    (authType === AUTH_TYPES.CONDITIONAL && !authService.isUserLoggedIn())
+  ) {
+    try {
+      await authService.checkAuthentication();
+      devLog(`Authentication passed for ${config.url}`);
+    } catch (error) {
+      devError("Authentication check failed:", error);
+      authService.logoutUser();
+      throw new APIError(
+        "Authentication failed. Please log in again.",
+        401,
+        error
+      );
+    }
+  }
+}
+
+apiClient.defaults.timeout = 10000; // 10 seconds
+
+// Request Interceptor
+apiClient.interceptors.request.use(
+  async (config) => {
+    devLog("Request interceptor triggered.");
+    await ensureAuthentication(config);
+    return config;
+  },
+  (error) => {
+    devError("Request error:", error);
+    return Promise.reject(error);
+  }
+);
+
+// Response Interceptor
+apiClient.interceptors.response.use(
+  (response) => {
+    devLog("Response interceptor triggered.");
+    return response;
+  },
+  async (error) => {
+    devError("Response error:", error);
+    const originalConfig = error.config;
+
+    // Handle network errors with retry mechanism
+    if (!error.response && !originalConfig.__isRetryRequest) {
+      originalConfig.__isRetryRequest = true;
+      originalConfig.__retryCount = 0;
+
+      while (originalConfig.__retryCount < MAX_RETRIES) {
+        try {
+          await wait(RETRY_DELAY);
+          devLog(
+            `Retrying request (${
+              originalConfig.__retryCount + 1
+            }/${MAX_RETRIES})`
+          );
+          return await apiClient.request(originalConfig);
+        } catch (retryError) {
+          originalConfig.__retryCount++;
+          if (originalConfig.__retryCount === MAX_RETRIES) {
+            return Promise.reject(
+              new APIError(
+                "Network error after multiple retries",
+                null,
+                retryError
+              )
+            );
+          }
+        }
+      }
+    }
+
+    // Handle 401 Unauthorized
+    if (error.response?.status === 401 && !originalConfig.__isRetryRequest) {
+      devLog("401 Unauthorized detected.");
+      originalConfig.__isRetryRequest = true;
+      try {
+        await authService.refreshToken();
+        devLog("Token refreshed successfully.");
+        return apiClient.request(originalConfig);
+      } catch (refreshError) {
+        devError("Token refresh failed:", refreshError);
+        authService.logoutUser();
+        return Promise.reject(
+          new APIError(
+            "Authentication failed. Please log in again.",
+            401,
+            refreshError
+          )
+        );
+      }
+    }
+
+    // Handle other API errors
+    if (error.response) {
+      return Promise.reject(
+        new APIError(
+          error.response.data.message || "An error occurred",
+          error.response.status,
+          error
+        )
+      );
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export default apiClient;

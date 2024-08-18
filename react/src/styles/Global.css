@@ -1,0 +1,229 @@
+/* Global Styles */
+/* Purpose: General global styles, utility classes, and typography */
+
+body, .blog-page {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Flex and Layout Utilities */
+.mt-5 {
+    margin-top: 5rem !important;
+}
+
+.text-center {
+    text-align: center !important;
+}
+
+/* Containers */
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+}
+
+.profile-page, .register-container {
+    max-width: 1200px;
+}
+
+.register-container {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Headers and Typography */
+header, footer {
+    background-color: #282c34;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+}
+
+h1, h2, h3, h4, h5, h6, .hero-title, .profile-name, .blog-post-title, .register-heading {
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+    font-weight: bold;
+}
+
+h1, .hero-title {
+    font-size: 2rem;
+}
+
+.hero-title {
+    font-size: 1.75rem;
+    margin-bottom: .25rem;
+}
+
+.profile-name {
+    font-size: 2rem;
+}
+
+.hero-snippet, .profile-email, .profile-bio, .blog-post-meta, .password-rules p, .lead {
+    font-size: 1.125rem;
+    color: #6c757d;
+}
+
+.display-4 {
+    font-size: 2.5rem;
+    font-weight: 300;
+}
+
+.lead, .profile-bio {
+    font-weight: 300;
+}
+
+/* Buttons */
+.btn-primary, .register-button, .cta-button {
+    background-color: #007bff;
+    border: 1px solid #007bff;
+    color: white;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary:hover, .register-button:hover, .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border: 1px solid #6c757d;
+}
+
+.btn-lg {
+    margin-right: 10px;
+}
+
+/* Sections and Components */
+.hero-section, .profile-section, .search-section, .analytics-section, .list-group, .blog-card {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+}
+
+.profile-container, .author-section, .navbar-nav .nav-item {
+    display: flex;
+    align-items: center;
+}
+
+.profile-image img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.profile-details {
+    flex-grow: 1;
+}
+
+.list-group-item {
+    padding: 1rem;
+    border-radius: 0.25rem;
+}
+
+.list-group-item-action {
+    cursor: pointer;
+}
+
+/* Navbar */
+.navbar-nav .nav-item .dropdown-menu {
+    transition: transform 0.2s ease;
+}
+
+.navbar-nav .nav-item:hover .dropdown-menu {
+    transform: rotateY(0deg) translateY(0);
+}
+
+.navbar-nav .nav-item .dropdown-menu .dropdown-item {
+    transition: transform 0.2s ease;
+}
+
+.navbar-nav .nav-item .dropdown-menu .dropdown-item:hover {
+    animation: rotateEffect 0.4s forwards;
+}
+
+@keyframes rotateEffect {
+    0% { transform: rotate(0deg) translateY(0); }
+    50% { transform: rotate(15deg) translateY(-10px); }
+    100% { transform: rotate(0deg) translateY(0); }
+}
+
+/* Forms */
+.form-input, .form-group input, .form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #555;
+}
+
+.form-input.input-error, .form-group input:focus, .form-group textarea:focus {
+    border-color: red;
+    outline: none;
+}
+
+.error, .error-message {
+    color: red;
+}
+
+.password-rules p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.password-rules p::before {
+    margin-right: 10px;
+}
+
+.password-rules p.valid::before {
+    content: "\u2713";
+    color: #4caf50;
+}
+
+.password-rules p.invalid::before {
+    content: "\u2717";
+    color: #f44336;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 1.5rem;
+    }
+
+    .hero-snippet {
+        font-size: 1rem;
+    }
+
+    .register-container {
+        padding: 15px;
+    }
+
+    .register-heading {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .register-button {
+        padding: 12px;
+        font-size: 14px;
+    }
+}

@@ -1,0 +1,99 @@
+variables:
+  DOCKER_DRIVER: overlay2
+  ELASTICSEARCH_URL: "http://elasticsearch:9200"
+  SONAR_HOST_URL: "http://sonarqube:9000" # or SonarCloud URL
+  SONAR_TOKEN: "your-sonar-token"
+  DATABASE_USER: "sonar"
+  DATABASE_PASSWORD: "sonar_db_password"
+  DATABASE_NAME: "sonar"
+
+services:
+  - docker:dind
+  - name: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    alias: elasticsearch
+  - name: sonarqube:latest # For SonarQube local setup
+    alias: sonarqube
+
+stages:
+  - build
+  - test
+  - quality
+  - deploy
+
+# Content Management Microservice
+build_content_management:
+  stage: build
+  script:
+    - cd content_management
+    - docker build -t content_management_image .
+  tags:
+    - docker
+
+test_content_management:
+  stage: test
+  script:
+    - cd content_management
+    - docker run -e ELASTICSEARCH_URL=$ELASTICSEARCH_URL content_management_image pytest
+  tags:
+    - docker
+  services:
+    - elasticsearch
+
+quality_content_management:
+  stage: quality
+  script:
+    - cd content_management
+    - docker run --rm -e SONAR_HOST_URL=$SONAR_HOST_URL -e SONAR_TOKEN=$SONAR_TOKEN -v $(pwd)/content_management:/usr/src sonarsource/sonar-scanner-cli
+  only:
+    - merge_requests
+    - main
+  tags:
+    - docker
+
+deploy_content_management:
+  stage: deploy
+  script:
+    - docker push content_management_image
+  only:
+    - main
+  tags:
+    - docker
+
+# Search Service Microservice
+build_search_service:
+  stage: build
+  script:
+    - cd search_service
+    - docker build -t search_service_image .
+  tags:
+    - docker
+
+test_search_service:
+  stage: test
+  script:
+    - cd search_service
+    - docker run -e ELASTICSEARCH_URL=$ELASTICSEARCH_URL search_service_image pytest
+  tags:
+    - docker
+  services:
+    - elasticsearch
+
+quality_search_service:
+  stage: quality
+  script:
+    - cd search_service
+    - docker run --rm -e SONAR_HOST_URL=$SONAR_HOST_URL -e SONAR_TOKEN=$SONAR_TOKEN -v $(pwd)/search_service:/usr/src sonarsource/sonar-scanner-cli
+  only:
+    - merge_requests
+    - main
+  tags:
+    - docker
+
+deploy_search_service:
+  stage: deploy
+  script:
+    - docker push search_service_image
+  only:
+    - main
+  tags:
+    - docker

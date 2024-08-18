@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  content_management:
+    image: cms-django-app
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - elasticsearch
+    networks:
+      - my_network
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - my_network
+
+  celery:
+    build: .
+    command: celery -A cms worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - content_management
+      - redis
+    networks:
+      - my_network
+
+  redis:
+    image: redis:6
+    networks:
+      - my_network
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - my_network
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - my_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - my_network
+
+  search_service:
+    build: ./search_service
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env
+    depends_on:
+      - elasticsearch
+    networks:
+      - my_network
+
+volumes:
+  postgres_data:
+  esdata:
+
+networks:
+  my_network:
