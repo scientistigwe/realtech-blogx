@@ -1,51 +1,58 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect, useState, useRef } from "react";
 import { Breadcrumb } from "react-bootstrap";
 import HeroCarousel from "../components/Layouts/HeroCarousel";
 import PostList from "../components/Posts/PostList";
-import TagList from "../components/Tags/TagList";
-import { fetchPosts } from "../redux/slices/postsSlice";
-import { selectAllPosts } from "../redux/selectors/postsSelectors";
+import TagList from "../components/Tags/TagList"; // Ensure this component exists
+import api from "./../api/apiClient"; // Adjust the path according to your project structure
+
+console.log("Homepage starting...");
 
 const HomePage = () => {
-  const dispatch = useDispatch();
-  const allPosts = useSelector(selectAllPosts);
+  const [allPosts, setAllPosts] = useState([]);
   const [carouselLoaded, setCarouselLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    if (!carouselLoaded && allPosts.length === 0) {
-      dispatch(fetchPosts()); // Fetch posts only once when carousel is not loaded
+    if (!hasFetched.current) {
+      console.log("Fetching posts for the first time...");
+      const fetchPosts = async () => {
+        try {
+          const response = await api.posts.fetchAll(); // Using your apiClient's fetchAll method
+          setAllPosts(response.data);
+        } catch (error) {
+          console.error("Failed to fetch posts:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchPosts();
+      hasFetched.current = true;
     }
-  }, [dispatch, allPosts, carouselLoaded]);
+  }, []);
 
   const handlePostsLoaded = () => {
-    setCarouselLoaded(true); // Mark that the carousel has loaded posts
+    console.log("Carousel has loaded posts.");
+    setCarouselLoaded(true);
   };
 
   const remainingPosts = allPosts.slice(3);
 
+  if (loading) {
+    return <div>Loading posts...</div>;
+  }
+
   return (
-    <div className="container mt-4">
+    <div>
       <Breadcrumb>
         <Breadcrumb.Item active>Home</Breadcrumb.Item>
       </Breadcrumb>
 
-      <section className="hero-carousel mb-5">
-        <HeroCarousel
-          posts={allPosts.slice(0, 3)}
-          onPostsLoaded={handlePostsLoaded}
-        />
-      </section>
+      <HeroCarousel posts={allPosts} onPostsLoaded={handlePostsLoaded} />
 
-      <section className="post-list mb-5">
-        <h2 className="mb-4">Latest Posts</h2>
-        <PostList posts={remainingPosts} />
-      </section>
+      {carouselLoaded && <PostList posts={remainingPosts} />}
 
-      <section className="tag-list mb-5">
-        <h2 className="mb-4">Popular Tags</h2>
-        <TagList />
-      </section>
+      <TagList />
     </div>
   );
 };

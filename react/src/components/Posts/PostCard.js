@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
-import apiClient from "../../api/apiInterceptor"; // Import the API client
-import { apiEndpoints } from "../../api/apiEndpoints"; // Import API endpoints
+import api from "./../../api/apiClient"; // Import API endpoints
 import "./../../styles/Components.css"; // Import the CSS file for styling
 
 const PostCard = ({ post, currentUser }) => {
@@ -36,11 +35,7 @@ const PostCard = ({ post, currentUser }) => {
 
   const handleUpvote = async () => {
     try {
-      const response = await apiClient.post(
-        apiEndpoints.posts.upvote(id),
-        {},
-        { withCredentials: true }
-      );
+      const response = await api.posts.upvote(id); // Adjust the API call to match your implementation
       if (response.status === 200) {
         setLocalUpvotes(localUpvotes + 1);
       } else {
@@ -53,11 +48,7 @@ const PostCard = ({ post, currentUser }) => {
 
   const handleDownvote = async () => {
     try {
-      const response = await apiClient.post(
-        apiEndpoints.posts.downvote(id),
-        {},
-        { withCredentials: true }
-      );
+      const response = await api.posts.downvote(id); // Adjust the API call to match your implementation
       if (response.status === 200) {
         setLocalDownvotes(localDownvotes + 1);
       } else {
@@ -71,9 +62,7 @@ const PostCard = ({ post, currentUser }) => {
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       try {
-        const response = await apiClient.delete(apiEndpoints.posts.delete(id), {
-          withCredentials: true,
-        });
+        const response = await api.posts.delete(id); // Adjust the API call to match your implementation
         if (response.status === 204) {
           navigate("/posts");
         } else {

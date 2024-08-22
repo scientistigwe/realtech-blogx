@@ -1,124 +1,30 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
-import { useDispatch, useSelector } from "react-redux";
-import { useForm } from "./../../hooks/UseForm";
-import {
-  createPost,
-  uploadThumbnail,
-  clearError,
-} from "../../redux/slices/postsSlice";
-import { apiEndpoints } from "./../../api/apiEndpoints";
-
-const initialFormData = {
-  title: "",
-  content: "",
-  excerpt: "",
-  metaDescription: "",
-  metaTitle: "",
-  metaKeywords: "",
-  publicationDate: "",
-  primaryCategory: "",
-  subcategory: "",
-  tags: "",
-  isPublic: true,
-};
+import { useCreatePost } from "./../../hooks/usePost";
+import "./../../styles/Components.css"; // Adjust the path according to your project structure
 
 const CreatePost = () => {
-  const { formData, handleChange, resetForm } = useForm(initialFormData);
-  const [primaryCategories, setPrimaryCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
-  const [image, setImage] = useState(null);
-  const { loading, successMessage, errorMessage } = useSelector(
-    (state) => state.posts
-  );
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        // Fetch primary categories
-        const primaryResponse = await fetch(apiEndpoints.categories.primary);
-        if (!primaryResponse.ok)
-          throw new Error("Failed to load primary categories.");
-        const primaryData = await primaryResponse.json();
-        setPrimaryCategories(primaryData);
-
-        // Fetch subcategories
-        const subcategoriesResponse = await fetch(
-          apiEndpoints.categories.subcategories
-        );
-        if (!subcategoriesResponse.ok)
-          throw new Error("Failed to load subcategories.");
-        const subcategoriesData = await subcategoriesResponse.json();
-        setSubcategories(subcategoriesData);
-      } catch (error) {
-        console.error(error.message || "Failed to load categories.");
-      }
-    };
-
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    if (successMessage) {
-      resetForm();
-      navigate("/posts");
-    }
-  }, [successMessage, navigate, resetForm]);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    try {
-      // Dispatch the action to create a new post
-      const resultAction = await dispatch(createPost({ ...formData }));
-
-      if (createPost.fulfilled.match(resultAction)) {
-        const postId = resultAction.payload.id;
-
-        // Upload image if provided
-        if (image) {
-          const formDataImage = new FormData();
-          formDataImage.append("thumbnail", image);
-
-          const imageUploadResultAction = await dispatch(
-            uploadThumbnail({ postId, file: image })
-          );
-
-          if (uploadThumbnail.rejected.match(imageUploadResultAction)) {
-            dispatch(clearError());
-          }
-        }
-      } else {
-        throw new Error("Failed to create post");
-      }
-    } catch (error) {
-      console.error("Error creating post:", error);
-      dispatch(clearError());
-    }
-  };
+  const {
+    formData,
+    image,
+    loading,
+    error,
+    successMessage,
+    handleChange,
+    handleSubmit,
+  } = useCreatePost();
 
   return (
     <div className="container mt-4">
       <h1>Create Post</h1>
       {successMessage && (
-        <Alert
-          variant="success"
-          onClose={() => dispatch(clearError())}
-          dismissible
-        >
+        <Alert variant="success" dismissible>
           {successMessage}
         </Alert>
       )}
-      {errorMessage && (
-        <Alert
-          variant="danger"
-          onClose={() => dispatch(clearError())}
-          dismissible
-        >
-          {errorMessage}
+      {error && (
+        <Alert variant="danger" dismissible>
+          {error}
         </Alert>
       )}
       <Form onSubmit={handleSubmit}>
@@ -212,11 +118,7 @@ const CreatePost = () => {
             required
           >
             <option value="">Select a primary category</option>
-            {primaryCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
+            {/* Render primary categories here */}
           </Form.Control>
         </Form.Group>
 
@@ -229,15 +131,7 @@ const CreatePost = () => {
             onChange={handleChange}
           >
             <option value="">Select a subcategory</option>
-            {subcategories
-              .filter(
-                (sub) => sub.primaryCategoryId === formData.primaryCategory
-              )
-              .map((subcategory) => (
-                <option key={subcategory.id} value={subcategory.id}>
-                  {subcategory.name}
-                </option>
-              ))}
+            {/* Render subcategories here */}
           </Form.Control>
         </Form.Group>
 
@@ -254,11 +148,7 @@ const CreatePost = () => {
 
         <Form.Group controlId="formPostImage" className="mt-3">
           <Form.Label>Thumbnail Image</Form.Label>
-          <Form.Control
-            type="file"
-            accept="image/*"
-            onChange={(e) => setImage(e.target.files[0])}
-          />
+          <Form.Control type="file" accept="image/*" onChange={handleChange} />
         </Form.Group>
 
         <Form.Group controlId="formPostIsPublic" className="mt-3">

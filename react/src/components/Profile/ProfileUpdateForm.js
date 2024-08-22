@@ -1,37 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import {
-  fetchUserProfile,
-  updateUserProfile,
-  clearError,
-} from "../../redux/slices/userSlice";
-import {
-  selectUserProfile,
-  selectUserError,
-  selectUserLoading,
-  selectUserState,
-} from "../../redux/selectors/userSelectors"; // Adjusted imports
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useUserProfile } from "./../../hooks/useUser";
 import "../../styles/Pages.css";
 
-const ProfileUpdateForm = () => {
-  const dispatch = useDispatch();
+const ProfileUpdateForm = ({ onCancel }) => {
+  const { id } = useParams();
   const navigate = useNavigate();
 
-  const profile = useSelector(selectUserProfile);
-  const error = useSelector(selectUserError);
-  const loading = useSelector(selectUserLoading);
-  const { id, success } = useSelector(selectUserState); // Use selectUserState to get id and success
-
+  const { profile, loading, error, updateProfile } = useUserProfile(id);
   const [formData, setFormData] = useState({});
   const [newProfilePicture, setNewProfilePicture] = useState(null);
-
-  useEffect(() => {
-    if (id) {
-      dispatch(fetchUserProfile(id)); // Fetch profile using id
-    }
-    return () => dispatch(clearError());
-  }, [dispatch, id]);
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     if (profile) {
@@ -63,10 +42,12 @@ const ProfileUpdateForm = () => {
       if (newProfilePicture) {
         dataToSend.append("profile_picture", newProfilePicture);
       }
-      await dispatch(updateUserProfile({ id, data: dataToSend }));
-      setTimeout(() => navigate(`/profile/${id}/`), 2000);
-    } catch (error) {
-      console.error("Error updating profile:", error);
+      await updateProfile(dataToSend);
+      setSuccess("Profile updated successfully!");
+      navigate(`/profile/${id}`);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      setSuccess(""); // Clear success message on error
     }
   };
 
@@ -75,7 +56,7 @@ const ProfileUpdateForm = () => {
   return (
     <div className="container mt-4">
       <h1>Update Profile</h1>
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && <div className="alert alert-danger">{error.message}</div>}
       {success && <div className="alert alert-success">{success}</div>}
       <form onSubmit={handleSubmit}>
         {[
@@ -154,6 +135,13 @@ const ProfileUpdateForm = () => {
         </div>
         <button type="submit" className="btn btn-primary">
           Update Profile
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary ms-2"
+          onClick={onCancel}
+        >
+          Cancel
         </button>
       </form>
     </div>

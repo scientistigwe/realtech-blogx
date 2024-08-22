@@ -1,6 +1,8 @@
 // apiClient.js
 import apiClient from "./../api/apiInterceptor";
-import { apiEndpoints } from "./apiEndpoints"; // Import API endpoints configuration
+import { apiEndpoints } from "./../api/apiEndpoints"; // Import API endpoints configuration
+
+console.log(`API Client (comment.js): ${apiClient}`);
 
 /* ================================
    Public Endpoints - No Authentication Required

@@ -1,54 +1,35 @@
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchNotifications,
-  markNotificationAsRead,
-} from "../slices/notificationsSlice";
+import React from "react";
+import { useNotifications } from "../hooks/useNotification"; // Adjust path if necessary
 
-const Notifications = () => {
-  const dispatch = useDispatch();
-  const { notifications, loading, error } = useSelector(
-    (state) => state.notifications
-  );
+const Notification = () => {
+  const { notifications, loading, error, markAsRead } = useNotifications();
 
-  useEffect(() => {
-    dispatch(fetchNotifications());
-  }, [dispatch]);
+  if (loading) {
+    return <div>Loading notifications...</div>;
+  }
 
-  const handleMarkAsRead = (id) => {
-    dispatch(markNotificationAsRead(id));
-  };
-
-  if (loading)
-    return <div className="text-center mt-4">Loading notifications...</div>;
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
 
   return (
-    <div className="container mt-4 notifications">
-      <h1 className="mb-4">Notifications</h1>
-      {error && (
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      )}
+    <div>
+      <h2>Notifications</h2>
       {notifications.length === 0 ? (
         <p>No notifications available.</p>
       ) : (
-        <ul className="list-group">
+        <ul>
           {notifications.map((notification) => (
             <li
               key={notification.id}
-              className={`list-group-item ${notification.read ? "read" : ""}`}
-              role="listitem"
+              className={`notification-item ${notification.read ? "read" : ""}`}
             >
               <p>{notification.message}</p>
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => handleMarkAsRead(notification.id)}
-                disabled={notification.read}
-                aria-label={`Mark notification ${notification.id} as read`}
-              >
-                {notification.read ? "Read" : "Mark as Read"}
-              </button>
+              {!notification.read && (
+                <button onClick={() => markAsRead(notification.id)}>
+                  Mark as Read
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -57,4 +38,4 @@ const Notifications = () => {
   );
 };
 
-export default Notifications;
+export default Notification;

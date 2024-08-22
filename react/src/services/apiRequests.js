@@ -1,45 +1,29 @@
-/**
- * @file apiRequest.js
- * @description Contains API request functions related to content moderation, like fetching, approving, and rejecting content.
- *
- * @relation - Uses `apiClient` from `apiConfig.js` to make HTTP requests.
- */
+import apiClient from "../api/apiInterceptor.js";
+import { apiEndpoints } from "../api/apiEndpoints.js";
 
-import apiClient from "../api/apiInterceptor";
-import { apiEndpoints } from "./apiEndpoints";
+console.log(`API Client (apirequest.js): ${apiClient}`);
 
 const baseUrl = apiEndpoints.moderation;
 
-export const fetchPendingContent = async () => {
+const handleRequest = async (endpoint, method, data) => {
   try {
-    const response = await apiClient.get(`${baseUrl}/pending-content/`);
+    const response = await apiClient[method](endpoint, data);
     return response.data;
   } catch (error) {
-    console.error("Error fetching pending content:", error);
+    console.error(`Error in ${method} request to ${endpoint}:`, error);
     throw error;
   }
 };
 
-export const approveContent = async (id, contentType) => {
-  try {
-    const response = await apiClient.post(`${baseUrl}/approve-content/${id}/`, {
-      content_type: contentType,
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error approving content:", error);
-    throw error;
-  }
-};
+export const fetchPendingContent = () =>
+  handleRequest(`${baseUrl}/pending-content/`, "get");
 
-export const rejectContent = async (id, contentType) => {
-  try {
-    const response = await apiClient.post(`${baseUrl}/reject-content/${id}/`, {
-      content_type: contentType,
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error rejecting content:", error);
-    throw error;
-  }
-};
+export const approveContent = (id, contentType) =>
+  handleRequest(`${baseUrl}/approve-content/${id}/`, "post", {
+    content_type: contentType,
+  });
+
+export const rejectContent = (id, contentType) =>
+  handleRequest(`${baseUrl}/reject-content/${id}/`, "post", {
+    content_type: contentType,
+  });

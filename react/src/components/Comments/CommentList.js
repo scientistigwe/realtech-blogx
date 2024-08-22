@@ -1,72 +1,77 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchComments,
-  deleteComment,
-  updateComment,
-} from "../../redux/slices/commentsSlice"; // Adjust import path as needed
-import CommentDelete from "./CommentDelete"; // Adjust import path as needed
-import CommentUpdate from "./CommentUpdate"; // Adjust import path as needed
+import { useCommentList } from "./../../hooks/useComment";
 
 const CommentList = ({ postId }) => {
-  const dispatch = useDispatch();
-  const { comments, loading, error } = useSelector((state) => state.comments);
+  const {
+    comments,
+    loading,
+    error,
+    refetchComments,
+    deleteComment,
+    updateComment,
+  } = useCommentList(postId);
   const [localComments, setLocalComments] = useState(comments);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editContent, setEditContent] = useState("");
 
   useEffect(() => {
-    dispatch(fetchComments(postId))
-      .unwrap()
-      .then((fetchedComments) => setLocalComments(fetchedComments))
-      .catch((err) => console.error("Failed to fetch comments:", err));
-  }, [postId, dispatch]);
+    if (comments) {
+      setLocalComments(comments);
+    }
+  }, [comments]);
 
   const handleCommentDeleted = async (commentId) => {
-    // Optimistic UI update
     const updatedComments = localComments.filter(
       (comment) => comment.id !== commentId
     );
     setLocalComments(updatedComments);
 
     try {
-      await dispatch(deleteComment(commentId)).unwrap();
-      // Refetch comments to ensure consistency
-      const fetchedComments = await dispatch(fetchComments(postId)).unwrap();
-      setLocalComments(fetchedComments);
+      await deleteComment(commentId);
+      await refetchComments();
     } catch (err) {
       console.error("Failed to delete comment:", err);
-      // Rollback optimistic update
       setLocalComments(comments);
     }
   };
 
-  const handleCommentUpdated = async (commentId, newContent) => {
-    // Optimistic UI update
+  const handleCommentUpdated = async (commentId) => {
     const updatedComments = localComments.map((comment) =>
-      comment.id === commentId ? { ...comment, content: newContent } : comment
+      comment.id === commentId ? { ...comment, content: editContent } : comment
     );
     setLocalComments(updatedComments);
 
     try {
-      await dispatch(
-        updateComment({ commentId, content: newContent })
-      ).unwrap();
-      // Refetch comments to ensure consistency
-      const fetchedComments = await dispatch(fetchComments(postId)).unwrap();
-      setLocalComments(fetchedComments);
+      await updateComment(commentId, editContent);
+      await refetchComments();
+      setEditingCommentId(null);
     } catch (err) {
       console.error("Failed to update comment:", err);
-      // Rollback optimistic update
       setLocalComments(comments);
     }
   };
 
-  if (loading) return <div>Loading comments...</div>;
-  if (error)
+  const startEditing = (commentId, currentContent) => {
+    setEditingCommentId(commentId);
+    setEditContent(currentContent);
+  };
+
+  const cancelEditing = () => {
+    setEditingCommentId(null);
+    setEditContent("");
+  };
+
+  if (loading) {
+    return <div>Loading comments...</div>;
+  }
+
+  if (error) {
     return (
       <div className="error-message" style={{ color: "red" }}>
-        {error}
+        {error.message}
       </div>
     );
+  }
 
   return (
     <div className="comment-list">
@@ -75,19 +80,31 @@ const CommentList = ({ postId }) => {
         <ul>
           {localComments.map((comment) => (
             <li key={comment.id}>
-              <p>{comment.content}</p>
-              <small>By {comment.author.id}</small>
-              <CommentUpdate
-                commentId={comment.id}
-                initialContent={comment.content}
-                onCommentUpdated={(newContent) =>
-                  handleCommentUpdated(comment.id, newContent)
-                }
-              />
-              <CommentDelete
-                commentId={comment.id}
-                onCommentDeleted={() => handleCommentDeleted(comment.id)}
-              />
+              {editingCommentId === comment.id ? (
+                <div>
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                  />
+                  <button onClick={() => handleCommentUpdated(comment.id)}>
+                    Save
+                  </button>
+                  <button onClick={cancelEditing}>Cancel</button>
+                </div>
+              ) : (
+                <div>
+                  <p>{comment.content}</p>
+                  <small>By {comment.author.username}</small>
+                  <button
+                    onClick={() => startEditing(comment.id, comment.content)}
+                  >
+                    Edit
+                  </button>
+                  <button onClick={() => handleCommentDeleted(comment.id)}>
+                    Delete
+                  </button>
+                </div>
+              )}
             </li>
           ))}
         </ul>

@@ -1,15 +1,25 @@
-// src/components/TagList.js
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchTags } from "../../redux/slices/tagSlice"; // Adjust import path if necessary
+import React, { useEffect, useState } from "react";
+import api from "../../api/apiClient"; // Adjust the import path according to your project structure
 
 const TagList = () => {
-  const dispatch = useDispatch();
-  const { tags, loading, error } = useSelector((state) => state.tags);
+  const [tags, setTags] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchTags());
-  }, [dispatch]);
+    const fetchTags = async () => {
+      try {
+        const response = await api.tags.list(); // Assuming api.tags.list() fetches tags
+        setTags(response.data);
+      } catch (error) {
+        setError(error.message || "An error occurred while fetching tags.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTags();
+  }, []);
 
   if (loading) return <div>Loading tags...</div>;
 

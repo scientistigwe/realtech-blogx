@@ -1,103 +1,89 @@
-import {
-  loginApi,
-  logoutApi,
-  registerApi,
-  checkAuthenticationApi,
-  refreshTokenApi,
-  updatePasswordApi,
-  requestPasswordResetApi,
-} from "../api/authApi";
-import {
-  setAuthStatus,
-  clearAuthStatus,
-  getAuthStatus,
-} from "./../api/authStatus";
-import { APIError } from "./apiInterceptor"; // Assuming we've moved APIError to a separate file
+import apiClientBase from "../api/apiService";
+import { apiEndpoints } from "../api/apiEndpoints";
+import { setAuthStatus, clearAuthStatus, getAuthStatus } from "./authStatus";
+import { APIError } from "../utils/apiError";
 
-const isDevelopment = process.env.NODE_ENV === "development";
+console.log("AuthService starting...");
 
-function devLog(...args) {
-  if (isDevelopment) {
-    console.log(...args);
-  }
-}
-
-function devError(...args) {
-  if (isDevelopment) {
-    console.error(...args);
-  }
-}
-
-const handleResponse = async (apiCall) => {
+// Helper function to handle service calls
+const handleServiceCall = async (apiCall, logPrefix) => {
   try {
     const response = await apiCall();
-    devLog("API Response received:", response);
+    console.log(`${logPrefix} response:`, response);
     if (response.data?.expirationTime) {
-      devLog(
-        "Setting auth status with expiration time:",
-        response.data.expirationTime
-      );
-      setAuthStatus(true, response.data.expirationTime);
+      setAuthStatus(true, response.data.expirationTime); // Update auth status on successful login/refresh
     }
     return response.data;
   } catch (error) {
-    devError("API Request Error:", error);
+    console.error(`${logPrefix} error:`, error);
     if (error instanceof APIError) {
-      throw error;
-    } else {
-      throw new APIError(error.message, error.response?.status, error);
+      throw error; // Rethrow known API errors
     }
+    throw new APIError(error.message, error.response?.status, error); // Convert unknown errors to APIError
   }
 };
 
+// User authentication functions
+
 export const loginUser = async (credentials) => {
-  devLog("Attempting to log in with:", credentials);
-  return handleResponse(() => loginApi(credentials));
+  return handleServiceCall(
+    () => apiClientBase.post(apiEndpoints.auth.login, credentials),
+    "Login"
+  );
 };
 
 export const logoutUser = async () => {
   try {
-    devLog("Attempting to log out.");
-    await logoutApi();
-    devLog("Logout request sent.");
+    await handleServiceCall(
+      () => apiClientBase.post(apiEndpoints.auth.logout),
+      "Logout"
+    );
+  } catch (error) {
+    console.error("Logout error:", error);
+    throw error;
   } finally {
-    devLog("Clearing auth status.");
-    clearAuthStatus();
+    clearAuthStatus(); // Always clear auth status on logout
   }
 };
 
 export const registerUser = async (formData) => {
-  devLog("Attempting to register with:", formData);
-  return handleResponse(() => registerApi(formData));
+  return handleServiceCall(
+    () => apiClientBase.post(apiEndpoints.auth.register, formData),
+    "Registration"
+  );
 };
 
 export const checkAuthentication = async () => {
-  devLog("Checking authentication status.");
-  if (getAuthStatus()) {
-    devLog("Auth status found in Redux state.");
-    return { isAuthenticated: true };
+  const authStatus = getAuthStatus();
+  if (authStatus) {
+    return { isAuthenticated: true }; // Return cached auth status if available
   }
-  return handleResponse(() => checkAuthenticationApi());
+  return handleServiceCall(
+    () => apiClientBase.get(apiEndpoints.auth.checkAuthentication),
+    "Authentication Check"
+  );
 };
 
 export const refreshToken = async () => {
-  devLog("Attempting to refresh token.");
-  return handleResponse(() => refreshTokenApi());
+  return handleServiceCall(
+    () => apiClientBase.post(apiEndpoints.auth.refreshToken),
+    "Token Refresh"
+  );
 };
 
 export const requestPasswordReset = async (email) => {
-  devLog("Requesting password reset for email:", email);
-  return handleResponse(() => requestPasswordResetApi(email));
+  return handleServiceCall(
+    () => apiClientBase.post(apiEndpoints.auth.resetPassword, { email }),
+    "Password Reset"
+  );
 };
 
 export const updatePassword = async (passwordData) => {
-  devLog("Updating password with data:", passwordData);
-  return handleResponse(() => updatePasswordApi(passwordData));
+  return handleServiceCall(
+    () =>
+      apiClientBase.post(apiEndpoints.auth.resetPasswordConfirm, passwordData),
+    "Password Update"
+  );
 };
 
-export const isUserLoggedIn = () => {
-  const authStatus = getAuthStatus();
-  return authStatus && authStatus.isAuthenticated;
-};
-
-export { getAuthStatus };
+export const isUserLoggedIn = () => getAuthStatus()?.isAuthenticated; // Check if the user is logged in

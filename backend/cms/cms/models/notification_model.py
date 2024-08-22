@@ -1,7 +1,8 @@
 from django.db import models
 from django.conf import settings  # Add this import
+from cms.models.time_stamped_model import TimeStampedModel
 
-class Notification(models.Model):
+class Notification(TimeStampedModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
     message = models.TextField()
     is_read = models.BooleanField(default=False)

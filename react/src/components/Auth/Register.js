@@ -1,14 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { FormInput, PasswordInput } from "./../common/FormComponents";
-import { useForm } from "./../../hooks/UseForm";
-import { register } from "../../redux/slices/authSlice";
-import { uploadProfilePicture } from "../../api/users";
+import useRegister from "./../../hooks/userAuth";
 import { Container, Row, Col, Form, Button, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { selectAuthLoading } from "../../redux/selectors/authSelectors"; // Import selectors
 import "./../../styles/Layout.css";
 import "./../../styles/Pages.css";
 import "./../../styles/Global.css";
@@ -30,14 +25,12 @@ const initialFormData = {
 };
 
 const Register = () => {
-  const { formData, handleChange, setFormData } = useForm(initialFormData);
+  const [formData, setFormData] = useState(initialFormData);
   const [profilePicture, setProfilePicture] = useState(null);
   const [isAuthor, setIsAuthor] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState(""); // Define state for errors
-  const dispatch = useDispatch();
+  const { register, loading, error, message } = useRegister();
+  const [errorState, setError] = useState(""); // Define setError using useState
   const navigate = useNavigate();
-  const loading = useSelector(selectAuthLoading); // Use selector for loading state
   const quillRef = useRef(null);
 
   useEffect(() => {
@@ -49,7 +42,6 @@ const Register = () => {
 
   const validateForm = () => {
     const errors = {};
-
     if (formData.first_name.length > 150)
       errors.first_name = "First name must be 150 characters or fewer";
     if (formData.last_name.length > 150)
@@ -95,11 +87,13 @@ const Register = () => {
     return errors;
   };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleBioChange = (content) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      bio: content,
-    }));
+    setFormData((prevData) => ({ ...prevData, bio: content }));
   };
 
   const handleFileChange = (e) => {
@@ -114,9 +108,6 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
-    setError(""); // Reset error state
-
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setError(
@@ -127,62 +118,12 @@ const Register = () => {
     }
 
     try {
-      const formDataToSend = new FormData();
-
-      // Append all form fields
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key !== "confirmPassword") {
-          formDataToSend.append(key, value);
-        }
-      });
-
-      // Append author-specific fields
-      formDataToSend.append("is_author", isAuthor);
-      if (isAuthor) {
-        formDataToSend.append("facebook_profile", formData.facebook || "");
-        formDataToSend.append("twitter_handle", formData.twitter || "");
-        formDataToSend.append("linkedin_profile", formData.linkedin || "");
+      const data = await register(formData, profilePicture, isAuthor);
+      if (data) {
+        navigate(`/profile/${data.user_id}/`);
       }
-
-      // Append profile picture if available
-      if (profilePicture) {
-        formDataToSend.append(
-          "profile_picture",
-          profilePicture,
-          profilePicture.name
-        );
-      }
-
-      console.log("Sending registration data:", formDataToSend);
-
-      const actionResult = await dispatch(register(formDataToSend)).unwrap();
-      console.log("Registration response:", actionResult);
-
-      setMessage("Registration successful. Redirecting to profile...");
-
-      // Handle profile picture upload separately if needed
-      if (profilePicture && actionResult.id) {
-        try {
-          const pictureResponse = await uploadProfilePicture(
-            profilePicture,
-            actionResult.id
-          );
-          if (pictureResponse.status === 200) {
-            setMessage("Registration and profile picture upload successful.");
-          }
-        } catch (pictureError) {
-          console.error("Failed to upload profile picture:", pictureError);
-          setMessage(
-            "Registration successful, but failed to upload profile picture."
-          );
-        }
-      }
-
-      // Redirect to the user's profile page with the id
-      navigate(`/profile/${actionResult.user_id}/`);
     } catch (err) {
-      const errorMessage = err.message || "An unexpected error occurred.";
-      setError(`Registration failed: ${errorMessage}`);
+      // Error handled by the hook
     }
   };
 
@@ -192,59 +133,77 @@ const Register = () => {
         <Col md={8} lg={6}>
           <h2 className="register-heading text-center">Register</h2>
           {message && <Alert variant="success">{message}</Alert>}
-          {error && <Alert variant="danger">{error}</Alert>}
+          {errorState && <Alert variant="danger">{errorState}</Alert>}{" "}
+          {/* Use errorState here */}
           <Form onSubmit={handleSubmit} className="register-form">
-            <FormInput
-              label="First Name"
-              name="first_name"
-              value={formData.first_name}
-              onChange={handleChange}
-              maxLength={150}
-              required
-            />
-            <FormInput
-              label="Last Name"
-              name="last_name"
-              value={formData.last_name}
-              onChange={handleChange}
-              maxLength={150}
-              required
-            />
-            <FormInput
-              label="Username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              pattern="^[\w.@+-]+$"
-              maxLength={150}
-              required
-              title="Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
-            />
-            <FormInput
-              label="Email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              maxLength={254}
-              required
-            />
-            <PasswordInput
-              label="Password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              maxLength={128}
-              required
-            />
-            <PasswordInput
-              label="Confirm Password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              maxLength={128}
-              required
-            />
+            <Form.Group className="mb-3">
+              <Form.Label>First Name</Form.Label>
+              <Form.Control
+                type="text"
+                name="first_name"
+                value={formData.first_name}
+                onChange={handleChange}
+                maxLength={150}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Last Name</Form.Label>
+              <Form.Control
+                type="text"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                maxLength={150}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Username</Form.Label>
+              <Form.Control
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                pattern="^[\w.@+-]+$"
+                maxLength={150}
+                required
+                title="Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                maxLength={254}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                maxLength={128}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Confirm Password</Form.Label>
+              <Form.Control
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                maxLength={128}
+                required
+              />
+            </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Bio</Form.Label>
               <ReactQuill
@@ -263,21 +222,26 @@ const Register = () => {
                 accept="image/*"
               />
             </Form.Group>
-            <FormInput
-              label="Location"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              maxLength={100}
-            />
-            <FormInput
-              label="Website"
-              name="website"
-              type="url"
-              value={formData.website}
-              onChange={handleChange}
-              maxLength={200}
-            />
+            <Form.Group className="mb-3">
+              <Form.Label>Location</Form.Label>
+              <Form.Control
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                maxLength={100}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Website</Form.Label>
+              <Form.Control
+                type="url"
+                name="website"
+                value={formData.website}
+                onChange={handleChange}
+                maxLength={200}
+              />
+            </Form.Group>
             <Form.Group className="mb-3">
               <Form.Check
                 type="checkbox"
@@ -289,27 +253,36 @@ const Register = () => {
             </Form.Group>
             {isAuthor && (
               <div>
-                <FormInput
-                  label="Facebook"
-                  name="facebook"
-                  value={formData.facebook}
-                  onChange={handleChange}
-                  maxLength={200}
-                />
-                <FormInput
-                  label="Twitter"
-                  name="twitter"
-                  value={formData.twitter}
-                  onChange={handleChange}
-                  maxLength={200}
-                />
-                <FormInput
-                  label="LinkedIn"
-                  name="linkedin"
-                  value={formData.linkedin}
-                  onChange={handleChange}
-                  maxLength={200}
-                />
+                <Form.Group className="mb-3">
+                  <Form.Label>Facebook</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="facebook"
+                    value={formData.facebook}
+                    onChange={handleChange}
+                    maxLength={200}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Twitter</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="twitter"
+                    value={formData.twitter}
+                    onChange={handleChange}
+                    maxLength={200}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>LinkedIn</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="linkedin"
+                    value={formData.linkedin}
+                    onChange={handleChange}
+                    maxLength={200}
+                  />
+                </Form.Group>
               </div>
             )}
             <Button

@@ -1,25 +1,34 @@
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchAuthors } from "../../redux/slices/authorsSlice"; // Adjust import paths as needed
-import {
-  selectAllAuthors,
-  selectLoading,
-  selectError,
-} from "../../redux/selectors/authorsSelectors"; // Adjust import paths as needed
+import React, { useEffect, useState } from "react";
+import api from "./../../api/apiClient";
 
 const AuthorList = () => {
-  const dispatch = useDispatch();
-
-  // Use selectors to access the state
-  const authors = useSelector(selectAllAuthors);
-  const loading = useSelector(selectLoading);
-  const error = useSelector(selectError);
+  const [authors, setAuthors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    dispatch(fetchAuthors());
-  }, [dispatch]);
+    const fetchAuthors = async () => {
+      setLoading(true);
+      setError(""); // Clear previous errors
 
-  if (loading) return <div>Loading...</div>;
+      try {
+        const response = await api.authors.list(); // Fetch authors from API
+        setAuthors(response.data); // Assuming response.data contains the list of authors
+      } catch (err) {
+        console.error("Error fetching authors:", err);
+        setError(
+          err.response?.data?.detail ||
+            "Failed to fetch authors. Please try again."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuthors();
+  }, []);
+
+  if (loading) return <div>Author list Loading...</div>;
   if (error) return <div>{error}</div>;
 
   return (

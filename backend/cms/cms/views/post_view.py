@@ -1,286 +1,229 @@
-from rest_framework import viewsets, permissions, filters
-from rest_framework.decorators import action
+from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from cms.models.post_model import Post, PostEngagement
-from cms.serializers.post_serializer import PostSerializer, PostCreateSerializer, PostCreateUpdateSerializer, PostEngagementSerializer
-from cms.views.permission_view import IsAuthorOrReadOnly
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
-from django.views.decorators.http import require_GET
-from django.http import JsonResponse
-from django.core.cache import cache
+from cms.models.tag_model import Tag
+from cms.serializers.post_serializer import (
+    TagSerializer, PostSerializer, PostDetailSerializer, PostAdminSerializer, PostEngagementSerializer
+)
 
-class PostViewSet(viewsets.ModelViewSet):
+class IsAdminOrAuthor(permissions.BasePermission):
     """
-    Handles CRUD operations for posts.
-    URL: /posts/
+    Custom permission to only allow superusers, staff, or authors to create, update, or delete.
     """
-    queryset = Post.objects.all()
-    permission_classes = [permissions.AllowAny, IsAuthorOrReadOnly]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['author', 'primary_category', 'subcategory', 'tags', 'status']
-    search_fields = ['title', 'content', 'meta_keywords']
-    ordering_fields = ['publication_date', 'title']
 
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return PostCreateUpdateSerializer
-        return PostSerializer
+    def has_permission(self, request, view):
+        # Allow any access for listing or retrieving
+        if view.action in ['list', 'retrieve']:
+            return True
+        # Allow if the user is authenticated and is either staff, author, or superuser
+        return request.user and request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser or request.user.is_author)
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.action == 'list' and not self.request.user.is_authenticated:
-            return queryset.filter(is_public=True, status='published')
-        return queryset
+# Tag ViewSet
+class TagViewSet(viewsets.ModelViewSet):
+    """
+    Handle CRUD operations for tags.
+    """
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]  # Public access for listing and retrieving
+        # Custom permission for creating, updating, or deleting
+        return [IsAdminOrAuthor()]
 
     @swagger_auto_schema(
-        operation_description="List all posts",
-        responses={200: PostSerializer(many=True)}
+        operation_description="Retrieve a list of tags",
+        responses={
+            200: openapi.Response('Success', TagSerializer(many=True)),
+            404: openapi.Response('Not Found'),
+        },
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_description="Create a new post",
-        request_body=PostCreateUpdateSerializer,
-        responses={201: PostSerializer()}
-    )
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_description="Retrieve a specific post",
-        responses={200: PostSerializer()}
+        operation_description="Retrieve a single tag",
+        responses={
+            200: openapi.Response('Success', TagSerializer()),
+            404: openapi.Response('Not Found'),
+        },
     )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_description="Update a post",
-        request_body=PostCreateUpdateSerializer,
-        responses={200: PostSerializer()}
+        operation_description="Create a new tag",
+        responses={
+            201: openapi.Response('Created', TagSerializer()),
+            400: openapi.Response('Bad Request'),
+        },
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Update an existing tag",
+        responses={
+            200: openapi.Response('Success', TagSerializer()),
+            400: openapi.Response('Bad Request'),
+            404: openapi.Response('Not Found'),
+        },
     )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_description="Partially update a post",
-        request_body=PostCreateUpdateSerializer,
-        responses={200: PostSerializer()}
+        operation_description="Partially update an existing tag",
+        responses={
+            200: openapi.Response('Success', TagSerializer()),
+            400: openapi.Response('Bad Request'),
+            404: openapi.Response('Not Found'),
+        },
     )
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_description="Delete a post",
-        responses={204: "No content"}
+        operation_description="Delete a tag",
+        responses={
+            204: openapi.Response('No Content'),
+            404: openapi.Response('Not Found'),
+        },
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_description="List posts by category",
-        responses={200: PostSerializer(many=True)}
-    )
-    @action(detail=False, methods=['get'], url_path=r'category/(?P<category>[\w-]+)')
-    def by_category(self, request, category=None):
-        posts = self.get_queryset().filter(primary_category=category)
-        serializer = self.get_serializer(posts, many=True)
-        return Response(serializer.data)
-
-    @swagger_auto_schema(
-        operation_description="List posts by subcategory",
-        responses={200: PostSerializer(many=True)}
-    )
-    @action(detail=False, methods=['get'], url_path=r'subcategory/(?P<subcategory>[\w-]+)')
-    def by_subcategory(self, request, subcategory=None):
-        posts = self.get_queryset().filter(subcategory=subcategory)
-        serializer = self.get_serializer(posts, many=True)
-        return Response(serializer.data)
-
-    @swagger_auto_schema(
-        method='get',
-        operation_description="Get posts by user",
-        manual_parameters=[
-            openapi.Parameter('user_id', openapi.IN_PATH, description="User ID", type=openapi.TYPE_INTEGER)
-        ],
-        responses={200: PostSerializer(many=True)}
-    )
-    @action(detail=False, methods=['get'], url_path=r'user/(?P<user_id>\d+)')
-    def by_user(self, request, user_id=None):
-        posts = self.get_queryset().filter(author_id=user_id)
-        serializer = self.get_serializer(posts, many=True)
-        return Response(serializer.data)
-
-    @swagger_auto_schema(
-        method='post',
-        operation_description="Upvote a post",
-        responses={200: PostSerializer()}
-    )
-    @action(detail=True, methods=['post'], url_path='upvote')
-    def upvote(self, request, pk=None):
-        post = self.get_object()
-        post.upvotes += 1
-        post.save()
-        serializer = self.get_serializer(post)
-        return Response(serializer.data)
-
-    @swagger_auto_schema(
-        method='post',
-        operation_description="Downvote a post",
-        responses={200: PostSerializer()}
-    )
-    @action(detail=True, methods=['post'], url_path='downvote')
-    def downvote(self, request, pk=None):
-        post = self.get_object()
-        post.downvotes += 1
-        post.save()
-        serializer = self.get_serializer(post)
-        return Response(serializer.data)
-    
-@require_GET
-def most_viewed_posts(request):
-    try:
-        # Define a cache key for the most viewed posts
-        cache_key = 'most_viewed_posts'
-        
-        # Try to get data from cache
-        data = cache.get(cache_key)
-        
-        if not data:
-            # If data is not in cache, fetch from the database
-            posts = Post.objects.filter(is_public=True).order_by('-view_count')[:10]
-            data = list(posts.values('id', 'title', 'content', 'view_count', 'upvotes', 'downvotes', 'slug'))
-            
-            # Store the data in cache with a timeout of 24 hours (86400 seconds)
-            cache.set(cache_key, data, timeout=86400)
-        
-        return JsonResponse(data, safe=False)
-    except Exception as e:
-        # Log error and return appropriate response
-        return JsonResponse({'error': str(e)}, status=500)
-    
-class PostCreateView(generics.CreateAPIView):
+# Post ViewSet
+class PostViewSet(viewsets.ModelViewSet):
     """
-    Handles creating a post.
-    URL: /posts/create/
-    """
-    serializer_class = PostCreateSerializer
-    permission_classes = [IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
-class PostDetailView(generics.RetrieveAPIView):
-    """
-    Retrieves detailed information about a specific post.
-    URL: /posts/<int:id>/
+    Handle CRUD operations for posts.
     """
     queryset = Post.objects.all()
-    serializer_class = PostSerializer
 
-    def get_queryset(self):
+    def get_serializer_class(self):
         if self.request.user.is_authenticated:
-            return Post.objects.all()
-        return Post.objects.filter(is_public=True)
+            if self.request.user.is_staff:
+                return PostAdminSerializer
+            elif self.request.user.is_author:
+                return PostDetailSerializer if self.action == 'retrieve' else PostSerializer
+        return PostSerializer
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]  # Public access for listing and retrieving
+        return [permissions.IsAuthenticated()]  # Authenticated access for other actions
 
-class PostUpdateView(generics.UpdateAPIView):
-    """
-    Handles updating a post.
-    URL: /posts/<int:id>/update/
-    """
-    queryset = Post.objects.all()
-    serializer_class = PostCreateSerializer
-    permission_classes = [IsAuthorOrReadOnly]
+    @action(detail=True, methods=['get'], url_path='admin-detail')
+    @swagger_auto_schema(
+        operation_description="Custom action to get detailed post info for admins.",
+        responses={
+            200: openapi.Response('Success', PostAdminSerializer()),
+            404: openapi.Response('Not Found'),
+        },
+    )
+    def admin_detail(self, request, pk=None):
+        post = get_object_or_404(Post, pk=pk)
+        serializer = PostAdminSerializer(post)
+        return Response(serializer.data)
 
-    def get_object(self):
-        post = super().get_object()
-        if self.request.user != post.author and not post.is_public:
-            raise PermissionDenied("You do not have permission to edit this post.")
-        return post
+    @action(detail=False, methods=['get'], url_path='category/(?P<category>[^/]+)')
+    @swagger_auto_schema(
+        operation_description="Fetch posts by category.",
+        responses={
+            200: openapi.Response('Success', PostSerializer(many=True)),
+            404: openapi.Response('Not Found'),
+        },
+    )
+    def by_category(self, request, category=None):
+        posts = Post.objects.filter(primary_category=category)
+        serializer = self.get_serializer(posts, many=True)
+        return Response(serializer.data)
 
-class PostDeleteView(generics.DestroyAPIView):
-    """
-    Handles deleting a post.
-    URL: /posts/<int:id>/delete/
-    """
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [IsAuthorOrReadOnly]
+    @action(detail=False, methods=['get'], url_path='subcategory/(?P<subcategory>[^/]+)')
+    @swagger_auto_schema(
+        operation_description="Fetch posts by subcategory.",
+        responses={
+            200: openapi.Response('Success', PostSerializer(many=True)),
+            404: openapi.Response('Not Found'),
+        },
+    )
+    def by_subcategory(self, request, subcategory=None):
+        posts = Post.objects.filter(subcategory=subcategory)
+        serializer = self.get_serializer(posts, many=True)
+        return Response(serializer.data)
 
-# Fetch posts by user
-class PostsByUserView(generics.ListAPIView):
-    """
-    Fetch posts by user.
-    URL: /posts/user/<int:user_id>/
-    """
-    serializer_class = PostSerializer
-    permission_classes = [permissions.AllowAny]
+    @action(detail=False, methods=['get'], url_path='user/(?P<user_id>[^/]+)')
+    @swagger_auto_schema(
+        operation_description="Fetch posts by user.",
+        responses={
+            200: openapi.Response('Success', PostSerializer(many=True)),
+            404: openapi.Response('Not Found'),
+        },
+    )
+    def by_user(self, request, user_id=None):
+        posts = Post.objects.filter(author_id=user_id)
+        serializer = self.get_serializer(posts, many=True)
+        return Response(serializer.data)
 
-    def get_queryset(self):
-        user_id = self.kwargs['user_id']
-        return Post.objects.filter(author_id=user_id)
+    @action(detail=True, methods=['post'], url_path='upvote')
+    @swagger_auto_schema(
+        operation_description="Upvote a post.",
+        responses={
+            200: openapi.Response('Success', openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+                'status': openapi.Schema(type=openapi.TYPE_STRING)
+            })),
+            404: openapi.Response('Not Found'),
+        },
+    )
+    def post_upvote(self, request, pk=None):
+        post = get_object_or_404(Post, pk=pk)
+        post.upvote()  # Ensure `upvote` method exists in your model
+        return Response({'status': 'post upvoted'})
 
-class PostEngagementViewSet(viewsets.ModelViewSet):
+    @action(detail=True, methods=['post'], url_path='downvote')
+    @swagger_auto_schema(
+        operation_description="Downvote a post.",
+        responses={
+            200: openapi.Response('Success', openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+                'status': openapi.Schema(type=openapi.TYPE_STRING)
+            })),
+            404: openapi.Response('Not Found'),
+        },
+    )
+    def post_downvote(self, request, pk=None):
+        post = get_object_or_404(Post, pk=pk)
+        post.downvote()  # Ensure `downvote` method exists in your model
+        return Response({'status': 'post downvoted'})
+
+# Post Engagement ViewSet
+class PostEngagementViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    Handles CRUD operations for post engagement metrics.
-    URL: /post-engagements/
+    Handle CRUD operations for post engagements.
     """
     queryset = PostEngagement.objects.all()
     serializer_class = PostEngagementSerializer
 
     @swagger_auto_schema(
-        method='post',
-        operation_description="Increment the clicks for a PostEngagement instance.",
-        responses={200: openapi.Response('Clicks incremented successfully')}
-    )
-    @action(detail=True, methods=['post'])
-    def increment_clicks(self, request, pk=None):
-        """
-        Custom action to increment the clicks for a PostEngagement instance.
-        """
-        engagement = self.get_object()
-        engagement.increment_clicks()
-        return Response({'status': 'clicks incremented'})
-
-    @swagger_auto_schema(
-        operation_description="List all PostEngagement instances.",
-        responses={200: PostEngagementSerializer(many=True)}
+        operation_description="Retrieve a list of post engagements",
+        responses={
+            200: openapi.Response('Success', PostEngagementSerializer(many=True)),
+            404: openapi.Response('Not Found'),
+        },
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_description="Create a new PostEngagement instance.",
-        request_body=PostEngagementSerializer,
-        responses={201: PostEngagementSerializer()}
-    )
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_description="Retrieve a PostEngagement instance.",
-        responses={200: PostEngagementSerializer()}
+        operation_description="Retrieve a single post engagement",
+        responses={
+            200: openapi.Response('Success', PostEngagementSerializer()),
+            404: openapi.Response('Not Found'),
+        },
     )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_description="Update a PostEngagement instance.",
-        request_body=PostEngagementSerializer,
-        responses={200: PostEngagementSerializer()}
-    )
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_description="Delete a PostEngagement instance.",
-        responses={204: "No content"}
-    )
-    def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)

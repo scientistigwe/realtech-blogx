@@ -1,7 +1,8 @@
 from django.db import models
 from django.utils.text import slugify
+from cms.models.time_stamped_model import TimeStampedModel
 
-class Tag(models.Model):
+class Tag(TimeStampedModel):
     name = models.CharField(max_length=50)
     slug = models.SlugField(unique=True)
 

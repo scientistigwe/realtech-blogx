@@ -1,5 +1,7 @@
 import apiClient from "./../redux/storeConfig";
-import { apiEndpoints } from "./apiEndpoints";
+import { apiEndpoints } from "./../api/apiEndpoints";
+
+console.log(`API Client (fileupload.js): ${apiClient}`);
 
 /* ================================
    Private Endpoints - Authentication Required

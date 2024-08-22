@@ -1,28 +1,47 @@
-import React, { useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { AuthContext } from "../../context/AuthProvider";
+import React, { useEffect, useState } from "react";
+import { Link, useHistory } from "react-router-dom";
+import api from "./../../api/apiClient";
+
 import "./../../styles/Layout.css";
 import "./../../styles/Pages.css";
 import "./../../styles/Global.css";
 import "./../../styles/Components.css";
 
 const Header = () => {
-  const { isAuthenticated, user, logout, loading } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const history = useHistory();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await api.get("/auth/users/me"); // Protected endpoint to check user info
+        if (response.status === 200) {
+          setIsAuthenticated(true);
+          setUser(response.data); // Set user data from response
+        } else {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      } catch (error) {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const handleLogout = async () => {
     try {
-      await logout();
-      navigate("/");
+      await api.post("/auth/token/logout/"); // Endpoint to handle JWT logout
+      setIsAuthenticated(false);
+      setUser(null);
+      history.push("/login");
     } catch (error) {
       console.error("Error logging out:", error);
-      alert("Failed to log out. Please try again.");
     }
   };
-
-  if (loading) {
-    return <div className="text-center mt-4">Loading...</div>;
-  }
 
   return (
     <header className="header">
@@ -34,10 +53,8 @@ const Header = () => {
               alt="RealTech BlogX brand logo"
               className="brand-logo"
               width={60}
-              height={100}
-              style={{
-                marginBottom: "20px",
-              }}
+              height={60}
+              style={{ marginBottom: "20px" }}
             />
             <span
               style={{ fontSize: "2em", color: "white", marginLeft: "10px" }}
@@ -79,6 +96,13 @@ const Header = () => {
               >
                 Logout
               </button>
+              <Link
+                className="btn btn-outline-secondary mx-2"
+                to="/notifications"
+                aria-label="Notifications"
+              >
+                Notifications
+              </Link>
             </>
           ) : (
             <>

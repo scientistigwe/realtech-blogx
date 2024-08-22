@@ -1,7 +1,7 @@
 // src/api/fastApi.js
 
 import { store, apiClient } from "./../redux/storeConfig"; // Assuming apiConfig is correctly set up
-import { apiEndpoints } from "./apiEndpoints"; // Assuming apiEndpoints are defined here
+import { apiEndpoints } from "./../api/apiEndpoints"; // Assuming apiEndpoints are defined here
 import { handleApiError } from "./utils"; // Updated error handling utility
 
 // Analyze sentiment

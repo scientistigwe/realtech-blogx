@@ -1,32 +1,24 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Container, Breadcrumb, Spinner, Alert } from "react-bootstrap";
-import SearchPosts from "../components/Search/SearchPosts";
-import { useState } from "react";
+import { useLocation } from "react-router-dom";
+import queryString from "query-string";
+import useSearchPosts from "./../hooks/useSearchPosts"; // Adjust import path as necessary
+import SearchBar from "./../components/Search/searchBar"; // Assuming SearchBar is the search component
+import PostCard from "./../components/Posts/PostCard"; // Assuming PostCard displays individual posts
+import Pagination from "./../components/common/Pagination"; // Assuming Pagination handles pagination
 
 const SearchResultsPage = () => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const location = useLocation();
+  const { q: searchQuery } = queryString.parse(location.search);
+  const { results, loading, error, performSearch } =
+    useSearchPosts(searchQuery);
 
-  // Dummy implementation for data fetching and error handling
-  // You might replace this with actual logic to handle loading and error states
-  const fetchSearchResults = async () => {
-    try {
-      // Simulate fetching search results
-      // const response = await fetch('your-api-endpoint');
-      // if (!response.ok) throw new Error('Failed to fetch results');
-      // const data = await response.json();
-      // setSearchResults(data);
-    } catch (error) {
-      setError(error.message || "Failed to load search results.");
-    } finally {
-      setLoading(false);
+  // Perform search when query changes
+  useEffect(() => {
+    if (searchQuery) {
+      performSearch(searchQuery);
     }
-  };
-
-  // Call fetchSearchResults when component mounts
-  React.useEffect(() => {
-    fetchSearchResults();
-  }, []);
+  }, [searchQuery, performSearch]);
 
   return (
     <Container className="mt-4">
@@ -35,6 +27,7 @@ const SearchResultsPage = () => {
         <Breadcrumb.Item active>Search Results</Breadcrumb.Item>
       </Breadcrumb>
       <h1>Search Results</h1>
+      <SearchBar />
       {loading && (
         <div className="text-center mt-4">
           <Spinner animation="border" />
@@ -45,7 +38,12 @@ const SearchResultsPage = () => {
           {error}
         </Alert>
       )}
-      <SearchPosts />
+      <div>
+        {results.length > 0
+          ? results.map((post) => <PostCard key={post.id} post={post} />)
+          : !loading && <p>No results found.</p>}
+      </div>
+      <Pagination /> {/* Adjust if pagination is needed */}
     </Container>
   );
 };

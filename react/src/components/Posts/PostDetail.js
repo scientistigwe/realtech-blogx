@@ -1,144 +1,113 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Spinner, Button, Alert } from "react-bootstrap";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchPostById,
-  fetchEngagementMetrics,
-  deletePost,
-  clearError,
-} from "../../redux/slices/postsSlice";
-import {
-  selectCurrentPost,
-  selectEngagementMetrics,
-  selectLoading,
-  selectError,
-} from "../../redux/selectors/postsSelectors";
-import { AuthContext } from "../../context/AuthProvider";
+import { Button } from "react-bootstrap";
+import api from "../../api/apiClient"; // Import the API functions
+import CommentList from "../Comments/CommentList";
+import CommentForm from "../Comments/CommentCreate";
+import useAuth from "../../hooks/userAuth"; // Import the custom hook for authentication
 
 const PostDetail = () => {
-  const { id } = useParams();
+  const { postId } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = React.useContext(AuthContext);
-  const dispatch = useDispatch();
+  const { isAuthenticated, user } = useAuth(); // Get the current user
+  const [post, setPost] = React.useState(null);
+  const [engagement, setEngagement] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
 
-  // Use selectors to access state
-  const post = useSelector(selectCurrentPost);
-  const engagement = useSelector(selectEngagementMetrics(id));
-  const loading = useSelector(selectLoading);
-  const error = useSelector(selectError);
-
-  const isAuthor = isAuthenticated && post?.author.id === user.id;
-
-  useEffect(() => {
-    const fetchData = async () => {
+  React.useEffect(() => {
+    const fetchPostDetails = async () => {
       try {
-        dispatch(fetchPostById(id));
-
-        // Only fetch engagement metrics if the user is authenticated
-        if (isAuthenticated) {
-          await dispatch(fetchEngagementMetrics(id));
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
+        const response = await api.posts.fetchById(postId);
+        setPost(response.data);
+        const engagementResponse = await api.posts.fetchEngagementMetrics(
+          postId
+        );
+        setEngagement(engagementResponse.data);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchData();
+    fetchPostDetails();
+  }, [postId]);
 
-    return () => {
-      dispatch(clearError());
-    };
-  }, [id, dispatch, isAuthenticated]);
+  const isAuthor = post && user && post.author.id === user.id;
 
   const handleEdit = () => {
-    navigate(`/edit-post/${id}`);
+    navigate(`/edit-post/${postId}`); // Navigate to the edit page
   };
 
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       try {
-        await dispatch(deletePost(id)).unwrap();
-        navigate("/"); // Redirect to home after deletion
-      } catch (error) {
-        console.error("Error deleting post:", error);
-        dispatch(clearError());
+        await api.posts.delete(postId);
+        navigate("/posts"); // Redirect to the posts list
+      } catch (err) {
+        console.error("Error deleting post:", err);
       }
     }
   };
 
-  const getImageUrl = (url) => {
-    if (url.startsWith("/media/")) {
-      return `http://localhost:8000${url}`;
-    }
-    return url; // Assuming the URL is already absolute
-  };
-
   if (loading) {
-    return (
-      <div className="text-center mt-4">
-        <Spinner animation="border" />
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   if (error) {
-    return (
-      <div className="text-center mt-4">
-        <Alert variant="danger">{error}</Alert>
-      </div>
-    );
+    return <div>Error: {error.message}</div>;
+  }
+
+  if (!post) {
+    return <div>Post not found</div>;
   }
 
   return (
     <div className="container mt-4 post-detail">
-      {post ? (
-        <>
-          <h1>{post.title}</h1>
-          {post.thumbnail && (
-            <img
-              src={getImageUrl(post.thumbnail)}
-              alt={post.title}
-              className="img-fluid"
-            />
-          )}
-          <div className="post-content mt-3">
-            <p>{post.content}</p>
-          </div>
-          <div className="post-meta mt-3">
-            <p>Author: {post.author.username}</p>
-            <p>Category: {post.primary_category?.name || "Uncategorized"}</p>
-            <p>Tags: {post.tags.map((tag) => tag.name).join(", ")}</p>
-          </div>
+      <h1>{post.title}</h1>
+      {post.thumbnail && (
+        <img
+          src={api.getImageUrl(post.thumbnail)} // Adjusted to use api method if available
+          alt={post.title}
+          className="img-fluid"
+        />
+      )}
+      <div className="post-content mt-3">
+        <p>{post.content}</p>
+      </div>
+      <div className="post-meta mt-3">
+        <p>Author: {post.author.username}</p>
+        <p>Category: {post.primary_category?.name || "Uncategorized"}</p>
+        <p>Tags: {post.tags.map((tag) => tag.name).join(", ")}</p>
+      </div>
+      <CommentList postId={post.id} />
 
-          {isAuthenticated && (
-            <div>
-              <h3>Engagement Metrics:</h3>
-              {engagement ? (
-                <>
-                  <p>Clicks: {engagement.clicks}</p>
-                  <p>Sessions: {engagement.sessions}</p>
-                  <p>Conversions: {engagement.conversions}</p>
-                </>
-              ) : (
-                <p>No engagement metrics available.</p>
-              )}
-            </div>
+      {isAuthenticated && (
+        <div>
+          <CommentForm postId={post.id} />
+          <h3>Engagement Metrics:</h3>
+          {engagement ? (
+            <>
+              <p>Clicks: {engagement.clicks}</p>
+              <p>Sessions: {engagement.sessions}</p>
+              <p>Conversions: {engagement.conversions}</p>
+            </>
+          ) : (
+            <p>No engagement metrics available.</p>
           )}
+        </div>
+      )}
 
-          {isAuthenticated && isAuthor && (
-            <div className="mt-3">
-              <Button onClick={handleEdit} variant="primary" className="me-2">
-                Edit Post
-              </Button>
-              <Button onClick={handleDelete} variant="danger">
-                Delete Post
-              </Button>
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="text-center">No post found.</p>
+      {isAuthenticated && isAuthor && (
+        <div className="mt-3">
+          <Button onClick={handleEdit} variant="primary" className="me-2">
+            Edit Post
+          </Button>
+          <Button onClick={handleDelete} variant="danger">
+            Delete Post
+          </Button>
+        </div>
       )}
     </div>
   );

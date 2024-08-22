@@ -12,7 +12,7 @@ import {
   Legend,
 } from "chart.js";
 import { Container, Row, Col, Card } from "react-bootstrap";
-import apiClient from "./../../api/apiInterceptor";
+import api from "./../../api/apiClient"; // Updated to match your API client
 
 ChartJS.register(
   CategoryScale,
@@ -27,15 +27,18 @@ ChartJS.register(
 
 const UserActivity = () => {
   const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch user activity data using apiClient
+    // Fetch user activity data
     const fetchUserData = async () => {
       try {
-        const response = await apiClient.get("/user-activity");
+        const response = await api.get("/user-activity");
         setUserData(response.data);
       } catch (error) {
         console.error("Error fetching user activity data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -72,33 +75,82 @@ const UserActivity = () => {
     <Container className="mt-4">
       <h1 className="mb-4">User Activity Insights</h1>
 
-      <Row>
-        <Col md={6}>
-          <Card className="mb-4">
-            <Card.Body>
-              <Card.Title>Daily Active Users</Card.Title>
-              {userData ? (
-                <Line data={lineChartData} options={{ responsive: true }} />
-              ) : (
-                <p>Loading activity data...</p>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
+      {loading ? (
+        <p>Loading data...</p>
+      ) : (
+        <Row>
+          <Col md={6}>
+            <Card className="mb-4">
+              <Card.Body>
+                <Card.Title>Daily Active Users</Card.Title>
+                {userData?.dailyActivity ? (
+                  <Line
+                    data={lineChartData}
+                    options={{
+                      responsive: true,
+                      plugins: {
+                        legend: {
+                          position: "top",
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: (context) => `Users: ${context.raw}`,
+                          },
+                        },
+                      },
+                    }}
+                  />
+                ) : (
+                  <p>No data available for daily active users.</p>
+                )}
+              </Card.Body>
+            </Card>
+          </Col>
 
-        <Col md={6}>
-          <Card className="mb-4">
-            <Card.Body>
-              <Card.Title>Activity Breakdown</Card.Title>
-              {userData ? (
-                <Bar data={barChartData} options={{ responsive: true }} />
-              ) : (
-                <p>Loading activity breakdown...</p>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+          <Col md={6}>
+            <Card className="mb-4">
+              <Card.Body>
+                <Card.Title>Activity Breakdown</Card.Title>
+                {userData?.activityBreakdown ? (
+                  <Bar
+                    data={barChartData}
+                    options={{
+                      responsive: true,
+                      plugins: {
+                        legend: {
+                          position: "top",
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: (context) =>
+                              `${context.label}: ${context.raw}`,
+                          },
+                        },
+                      },
+                      scales: {
+                        x: {
+                          title: {
+                            display: true,
+                            text: "Categories",
+                          },
+                        },
+                        y: {
+                          title: {
+                            display: true,
+                            text: "Values",
+                          },
+                        },
+                      },
+                    }}
+                  />
+                ) : (
+                  <p>No data available for activity breakdown.</p>
+                )}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* Summary Statistics (optional) */}
       {userData && (

@@ -1,48 +1,46 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-
-import { requestPasswordReset, updatePassword } from "../../redux/authService"; // Ensure this path is correct
-import { selectAuthLoading } from "../../redux/selectors/authSelectors"; // Ensure this path is correct
+import api from "./../../api/apiClient"; // Ensure this is correctly aligned with your API client
 
 const PasswordReset = ({ mode }) => {
   const [email, setEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [error, setError] = useState(""); // Correctly defined only once
+  const [error, setError] = useState(""); // Error state
+  const [loading, setLoading] = useState(false); // Loading state
 
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const loading = useSelector(selectAuthLoading);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
-    setError(""); // Clear any previous errors
+    setError(""); // Clear previous errors
+    setLoading(true); // Start loading
 
     try {
       if (mode === "request") {
         // Handle password reset request
-        await dispatch(requestPasswordReset(email)).unwrap();
+        await api.auth.resetPassword({ email });
         setMessage("A password reset link has been sent to your email.");
       } else if (mode === "reset") {
         // Handle password reset
-        await dispatch(
-          updatePassword({ currentPassword, newPassword })
-        ).unwrap();
+        await api.auth.resetPasswordConfirm({ currentPassword, newPassword });
         setMessage("Password has been updated successfully.");
         setCurrentPassword("");
         setNewPassword("");
         setTimeout(() => {
-          navigate("/auth/login"); // Redirect to login page after a brief delay
+          navigate("/login"); // Redirect to login page after a brief delay
         }, 2000);
       }
     } catch (err) {
       console.error("Error:", err);
       setError(
-        err.message || "Failed to perform the operation. Please try again."
+        err.response?.data?.detail ||
+          "Failed to perform the operation. Please try again."
       );
+    } finally {
+      setLoading(false); // End loading
     }
   };
 

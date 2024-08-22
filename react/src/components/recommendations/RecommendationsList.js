@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
-import apiClient from "./../../api/apiInterceptor"; // Replace with the correct path to your apiInterceptor
+import api from "./../../api/apiClient";
+
+console.log(`API Client (recommendation.js): ${api}`);
 
 function RecommendationsList({ userId }) {
   const [recommendations, setRecommendations] = useState([]);
 
   useEffect(() => {
     if (userId) {
-      apiClient
+      api
         .get(`/api/recommendations/${userId}`)
         .then((response) =>
           setRecommendations(response.data.recommendations || [])

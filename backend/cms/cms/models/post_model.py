@@ -1,12 +1,12 @@
 from django.db import models
-from cms.models.author_model import Author
 from cms.models.tag_model import Tag
 from django.utils.text import slugify
-from cms.models.utils import media_upload_to
+from cms.models.custom_user_model import CustomUser
 from django.contrib.postgres.search import SearchVectorField
-from django.contrib.postgres.search import SearchVector
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import os
+from cms.models.time_stamped_model import TimeStampedModel
 
 class PrimaryCategory(models.TextChoices):
     DATA = 'data', 'Data'
@@ -155,7 +155,11 @@ class Subcategory(models.TextChoices):
     MULTIPLAYER_GAMING = 'multiplayer_gaming', 'Multiplayer Gaming'
     VR_AR_DEVELOPMENT = 'vr_ar_development', 'VR/AR Development'
 
-class Post(models.Model):
+
+def post_thumbnail_upload_to(instance, filename):
+    return os.path.join('posts', f'{instance.slug}/thumbnails', filename)
+
+class Post(TimeStampedModel):
     STATUS_CHOICES = [
         ('draft', 'Draft'),
         ('published', 'Published'),
@@ -164,7 +168,7 @@ class Post(models.Model):
     title = models.CharField(max_length=255, db_index=True)
     content = models.TextField()
     excerpt = models.TextField(blank=True, null=True)
-    author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='posts')
+    author = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='posts')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
     meta_description = models.TextField(blank=True, null=True)
     meta_title = models.CharField(max_length=255, blank=True, null=True)
@@ -172,24 +176,15 @@ class Post(models.Model):
     meta_keywords = models.CharField(max_length=255, blank=True, null=True)
     slug = models.SlugField(max_length=200, unique=True, blank=True)
     is_public = models.BooleanField(default=True)
-    thumbnail = models.ImageField(upload_to=media_upload_to, blank=True, null=True)
+    thumbnail = models.ImageField(upload_to=post_thumbnail_upload_to, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    primary_category = models.CharField(
-        max_length=50,
-        choices=PrimaryCategory.choices,
-        default=PrimaryCategory.DATA
-    )
-    subcategory = models.CharField(
-        max_length=50,
-        choices=Subcategory.choices,
-        blank=True,
-        null=True
-    )
+    primary_category = models.CharField(max_length=50, choices=PrimaryCategory.choices, default=PrimaryCategory.DATA)
+    subcategory = models.CharField(max_length=50, choices=Subcategory.choices, blank=True, null=True)
     tags = models.ManyToManyField(Tag, related_name='posts', blank=True)
     view_count = models.PositiveIntegerField(default=0)
-    upvotes = models.PositiveIntegerField(default=0)  # New field
-    downvotes = models.PositiveIntegerField(default=0)  # New field
+    upvotes = models.PositiveIntegerField(default=0)
+    downvotes = models.PositiveIntegerField(default=0)
     search_vector = SearchVectorField(null=True, blank=True)
 
     class Meta:
@@ -217,13 +212,6 @@ class Post(models.Model):
         self.view_count += 1
         self.save(update_fields=['view_count'])
 
-    def update_search_vector(self):
-        # Use a direct update here
-        from django.contrib.postgres.search import SearchVector
-        Post.objects.filter(id=self.id).update(
-            search_vector=SearchVector('title', 'content')
-        )
-
     def upvote(self):
         self.upvotes += 1
         self.save(update_fields=['upvotes'])
@@ -232,11 +220,15 @@ class Post(models.Model):
         self.downvotes += 1
         self.save(update_fields=['downvotes'])
 
+    def update_search_vector(self):
+        from django.contrib.postgres.search import SearchVector
+        Post.objects.filter(id=self.id).update(search_vector=SearchVector('title', 'content'))
+
 @receiver(post_save, sender=Post)
 def update_post_search_vector(sender, instance, **kwargs):
     instance.update_search_vector()
 
-class PostEngagement(models.Model):
+class PostEngagement(TimeStampedModel):
     post = models.OneToOneField(Post, related_name='engagement', on_delete=models.CASCADE)
     clicks = models.PositiveIntegerField(default=0)
     sessions = models.PositiveIntegerField(default=0)
@@ -254,3 +246,4 @@ class PostEngagement(models.Model):
 
     def __str__(self):
         return f'Engagement metrics for post {self.post.title}'
+    

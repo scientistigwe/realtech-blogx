@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Navbar as BootstrapNavbar,
@@ -11,9 +11,11 @@ import {
   Spinner,
 } from "react-bootstrap";
 import searchIcon from "../../assets/icons/search.png";
-import { fetchPostsByCategory, fetchPostsBySubcategory } from "../../api/posts";
-import { searchPosts } from "../../api/search";
-import { AuthContext } from "../../context/AuthProvider";
+import {
+  fetchPostsByCategory,
+  fetchPostsBySubcategory,
+  searchPosts,
+} from "../../api/apiClient"; // Adjust the import paths accordingly
 
 // Enum values from Django models
 const primaryCategories = [
@@ -188,7 +190,30 @@ const Navbar = () => {
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [posts, setPosts] = useState([]);
-  const { user } = useContext(AuthContext);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Function to check user authentication
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/auth/user/", {
+          method: "GET",
+          credentials: "include", // Include cookies for authentication
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        setUser(null);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
@@ -201,12 +226,18 @@ const Navbar = () => {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      if (selectedCategory && selectedSubcategory) {
-        const results = await fetchPostsBySubcategory(selectedSubcategory);
-        setPosts(results);
-      } else if (selectedCategory) {
-        const results = await fetchPostsByCategory(selectedCategory);
-        setPosts(results);
+      if (selectedCategory) {
+        try {
+          setLoading(true);
+          const results = selectedSubcategory
+            ? await fetchPostsBySubcategory(selectedSubcategory)
+            : await fetchPostsByCategory(selectedCategory);
+          setPosts(results);
+        } catch (error) {
+          console.error("Error fetching posts:", error);
+        } finally {
+          setLoading(false);
+        }
       }
     };
     fetchPosts();
@@ -229,16 +260,24 @@ const Navbar = () => {
     setSearchTerm(event.target.value);
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout/", {
+        method: "POST",
+        credentials: "include", // Include cookies for authentication
+      });
+      setUser(null);
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
   return (
     <BootstrapNavbar bg="light" expand="lg">
       <BootstrapNavbar.Toggle aria-controls="basic-navbar-nav" />
       <BootstrapNavbar.Collapse id="basic-navbar-nav">
         <Nav className="mr-auto">
-          <NavDropdown
-            title="Categories"
-            id="basic-nav-dropdown"
-            aria-label="Categories"
-          >
+          <NavDropdown title="Categories" id="basic-nav-dropdown">
             {primaryCategories.map((category) => (
               <NavDropdown.Item
                 key={category.value}
@@ -249,11 +288,7 @@ const Navbar = () => {
             ))}
           </NavDropdown>
           {selectedCategory && (
-            <NavDropdown
-              title="Subcategories"
-              id="basic-nav-dropdown-sub"
-              aria-label="Subcategories"
-            >
+            <NavDropdown title="Subcategories" id="basic-nav-dropdown-sub">
               {subcategories[selectedCategory]?.map((subcategory) => (
                 <NavDropdown.Item
                   key={subcategory.value}
@@ -272,33 +307,28 @@ const Navbar = () => {
             className="mr-sm-2"
             value={searchTerm}
             onChange={handleSearchTermChange}
-            aria-label="Search"
           />
-          <Button
-            variant="outline-success"
-            type="submit"
-            aria-label="Submit search"
-          >
-            <img src={searchIcon} alt="Search icon" width="30" />
+          <Button variant="outline-success" type="submit">
+            <img src={searchIcon} alt="Search" width="30" />
           </Button>
         </Form>
       </BootstrapNavbar.Collapse>
+
+      {/* Loading Modal */}
       {loading && (
-        <Modal
-          show={loading}
-          onHide={() => setLoading(false)}
-          aria-labelledby="loading-modal-title"
-        >
+        <Modal show={loading} onHide={() => setLoading(false)} centered>
           <Modal.Body>
             <Spinner animation="border" />
           </Modal.Body>
         </Modal>
       )}
+
+      {/* Search Results Modal */}
       {searchResults.length > 0 && (
         <Modal
           show={searchResults.length > 0}
           onHide={() => setSearchResults([])}
-          aria-labelledby="search-results-modal-title"
+          centered
         >
           <Modal.Header closeButton>
             <Modal.Title>Search Results</Modal.Title>
@@ -314,12 +344,10 @@ const Navbar = () => {
           </Modal.Body>
         </Modal>
       )}
+
+      {/* Posts Modal */}
       {posts.length > 0 && (
-        <Modal
-          show={posts.length > 0}
-          onHide={() => setPosts([])}
-          aria-labelledby="posts-modal-title"
-        >
+        <Modal show={posts.length > 0} onHide={() => setPosts([])} centered>
           <Modal.Header closeButton>
             <Modal.Title>Posts</Modal.Title>
           </Modal.Header>
@@ -334,8 +362,24 @@ const Navbar = () => {
           </Modal.Body>
         </Modal>
       )}
-      {user && <div>Welcome, {user.name}!</div>}{" "}
-      {/* Using the 'user' variable */}
+
+      {/* User Greeting and Logout */}
+      {user ? (
+        <div>
+          <span>Welcome, {user.username}!</span>
+          <Button
+            onClick={handleLogout}
+            variant="outline-danger"
+            className="ml-2"
+          >
+            Logout
+          </Button>
+        </div>
+      ) : (
+        <Link to="/login" className="btn btn-outline-primary">
+          Login
+        </Link>
+      )}
     </BootstrapNavbar>
   );
 };

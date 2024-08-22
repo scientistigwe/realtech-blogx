@@ -1,28 +1,25 @@
-/**
- * @file authStatus.js
- * @description Manages the authentication status and token expiration logic in memory.
- * This is used to check and update the authentication status independently of Redux.
- *
- * @relation - Used by `authService.js` to manage authentication status without involving Redux directly.
- */
+console.log("AuthStatus starting...");
 
+// Initialize state for authentication status
 let isAuthenticated = false;
 let tokenExpirationTime = 0;
 
+// Function to set authentication status and expiration time
 export const setAuthStatus = (status, expirationTime) => {
-  console.log("Setting auth status:", { status, expirationTime });
   isAuthenticated = status;
   tokenExpirationTime = expirationTime;
+  console.log(`Auth status set: ${status}, expires at: ${expirationTime}`);
 };
 
+// Function to get the current authentication status
 export const getAuthStatus = () => {
-  const status = isAuthenticated && Date.now() < tokenExpirationTime;
-  console.log("Getting auth status:", status);
-  return status;
+  // Check if the current time is less than the token expiration time
+  return isAuthenticated && Date.now() < tokenExpirationTime;
 };
 
+// Function to clear authentication status
 export const clearAuthStatus = () => {
-  console.log("Clearing auth status.");
   isAuthenticated = false;
   tokenExpirationTime = 0;
+  console.log("Auth status cleared");
 };

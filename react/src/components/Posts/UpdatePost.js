@@ -1,39 +1,46 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
-import { useDispatch, useSelector } from "react-redux";
-import { useForm } from "../../hooks/UseForm";
-import {
-  fetchPostById,
-  updatePost,
-  uploadThumbnail,
-  clearError,
-} from "../../redux/slices/postsSlice";
-import { apiEndpoints } from "../../api/apiEndpoints";
-
-const initialFormData = {
-  title: "",
-  content: "",
-  category: "",
-  tags: "",
-};
+import { usePostDetails, useUpdatePost } from "./../../hooks/usePost";
+import api from "./../../api/apiClient";
 
 const UpdatePost = () => {
-  const { id } = useParams();
-  const { formData, handleChange, resetForm } = useForm(initialFormData);
-  const [categories, setCategories] = useState([]);
+  const { postId } = useParams();
+  const {
+    post,
+    loading: postLoading,
+    error: postError,
+  } = usePostDetails(postId);
+  const {
+    updatePost,
+    loading: updateLoading,
+    error: updateError,
+  } = useUpdatePost();
+  const [formData, setFormData] = useState({
+    title: "",
+    content: "",
+    category: "",
+    tags: "",
+  });
   const [image, setImage] = useState(null);
-  const { loading, error, successMessage, currentPost } = useSelector(
-    (state) => state.posts
-  );
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    if (post) {
+      setFormData({
+        title: post.title,
+        content: post.content,
+        category: post.category,
+        tags: post.tags ? post.tags.join(", ") : "",
+      });
+    }
+  }, [post]);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(apiEndpoints.categories.list, {
-          credentials: "include", // Ensure cookies are sent
+        const response = await fetch(api.categories.list, {
+          credentials: "include",
         });
         if (!response.ok) throw new Error("Failed to load categories.");
         const data = await response.json();
@@ -46,89 +53,48 @@ const UpdatePost = () => {
     fetchCategories();
   }, []);
 
-  useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        await dispatch(fetchPostById(id));
-      } catch (error) {
-        console.error("Failed to fetch post:", error);
-      }
-    };
-
-    fetchPost();
-  }, [id, dispatch]);
-
-  useEffect(() => {
-    if (currentPost) {
-      // Populate form with current post data
-      const { title, content, category, tags } = currentPost;
-      resetForm({
-        title,
-        content,
-        category,
-        tags: tags ? tags.join(", ") : "",
-      });
-    }
-  }, [currentPost, resetForm]);
-
-  useEffect(() => {
-    if (successMessage) {
-      resetForm();
-      navigate(`/posts/${id}`);
-    }
-  }, [successMessage, navigate, resetForm, id]);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    try {
-      // Dispatch the action to update the post
-      const resultAction = await dispatch(updatePost({ id, ...formData }));
-
-      if (updatePost.fulfilled.match(resultAction)) {
-        const postId = resultAction.payload.id;
-
-        // Upload image if provided
-        if (image) {
-          const formDataImage = new FormData();
-          formDataImage.append("image", image);
-
-          const imageUploadResultAction = await dispatch(
-            uploadThumbnail({ postId, file: image })
-          );
-
-          if (uploadThumbnail.rejected.match(imageUploadResultAction)) {
-            dispatch(clearError());
-          }
-        }
-      } else {
-        throw new Error("Failed to update post");
-      }
-    } catch (error) {
-      console.error("Error updating post:", error);
-      dispatch(clearError());
+  const handleChange = (e) => {
+    const { name, value, type, files } = e.target;
+    if (type === "file") {
+      setImage(files[0]);
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     }
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await updatePost(postId, formData);
+
+      if (image) {
+        const formDataImage = new FormData();
+        formDataImage.append("image", image);
+
+        await api.posts.uploadThumbnail(postId, formDataImage);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  if (postLoading) {
+    return <div>Loading post...</div>;
+  }
+
+  if (postError) {
+    return <div>Error: {postError.message}</div>;
+  }
 
   return (
     <div className="container mt-4">
       <h1>Edit Post</h1>
-      {successMessage && (
-        <Alert
-          variant="success"
-          onClose={() => dispatch(clearError())}
-          dismissible
-        >
-          {successMessage}
-        </Alert>
-      )}
-      {error && (
-        <Alert
-          variant="danger"
-          onClose={() => dispatch(clearError())}
-          dismissible
-        >
-          {error}
+      {updateError && (
+        <Alert variant="danger" dismissible>
+          {updateError}
         </Alert>
       )}
       <Form onSubmit={handleSubmit}>
@@ -188,20 +154,20 @@ const UpdatePost = () => {
 
         <Form.Group controlId="formPostImage" className="mt-3">
           <Form.Label>Image</Form.Label>
-          <Form.Control
-            type="file"
-            accept="image/*"
-            onChange={(e) => setImage(e.target.files[0])}
-          />
+          <Form.Control type="file" accept="image/*" onChange={handleChange} />
         </Form.Group>
 
         <Button
           variant="primary"
           type="submit"
           className="mt-4"
-          disabled={loading}
+          disabled={updateLoading}
         >
-          {loading ? <Spinner animation="border" size="sm" /> : "Update Post"}
+          {updateLoading ? (
+            <Spinner animation="border" size="sm" />
+          ) : (
+            "Update Post"
+          )}
         </Button>
       </Form>
     </div>

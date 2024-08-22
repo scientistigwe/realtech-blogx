@@ -23,8 +23,15 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('cms-api/v1/', include('cms.urls')),
+    path('cms-api/v1/', include('cms.urls')),  # Include your app's URLs
+
+    # Prometheus metrics
     path('', include(prometheus_urls)),  # Expose Prometheus metrics at `/metrics/`
+
+    # Djoser authentication URLs
+    path('auth/', include('djoser.urls')),  # User management endpoints
+    path('auth/', include('djoser.urls.jwt')),  # JWT endpoints
+    path('auth/', include('djoser.urls.authtoken')),  # Token endpoints (if using TokenAuthentication)
 
     # Swagger and ReDoc documentation
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
@@ -33,4 +40,3 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

@@ -1,5 +1,7 @@
 import apiClient from "./../api/apiInterceptor";
-import { apiEndpoints } from "./apiEndpoints";
+import { apiEndpoints } from "./../api/apiEndpoints";
+
+console.log(`API Client (notification.js): ${apiClient}`);
 
 /* ================================
    Private Endpoints - Authentication Required

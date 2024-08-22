@@ -68,3 +68,137 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+Updated Request and Response Flow with Authentication-Focused Files
+Request Flow
+
+User Interaction:
+
+File(s):
+Components that trigger API calls, such as components/Auth/Login.js.
+Dispatch API Request:
+
+File(s):
+components/Auth/Login.js initiates the request by dispatching actions.
+Redux Middleware:
+
+File(s):
+middleware/authMiddleware.js processes actions related to authentication, such as handling API calls or managing authentication state.
+API Call:
+
+File(s):
+api/apiClientBase.js creates an Axios instance configured for requests.
+api/authApi.js handles specific API calls related to authentication.
+API Config:
+
+File(s):
+api/apiEndpoints.js provides endpoint URLs for API requests.
+API Interceptor:
+
+File(s):
+auth/apiInterceptor.js determines whether the URL needs authentication based on private and public API endpoint lists. If authentication is needed, it checks the authentication status.
+Auth Status Check (if needed):
+
+File(s):
+auth/authStatus.js is used to check and set authentication status if the apiInterceptor determines that authentication is required.
+Sending Request (Network Layer):
+
+File(s):
+Managed by Axios as configured in apiClientBase.js.
+Server Processing:
+
+File(s):
+This is on the server-side and not directly represented in your files.
+Database Interaction:
+
+File(s):
+This is on the server-side and not directly represented in your files.
+Response Handling
+
+Receiving Response:
+
+File(s):
+Managed by Axios as configured in apiClientBase.js.
+API Interceptor (Response Handling):
+
+File(s):
+auth/apiInterceptor.js processes responses, including handling unauthorized errors.
+API Call Completion:
+
+File(s):
+api/apiClientBase.js completes the API request and response cycle.
+Redux Store Update:
+
+File(s):
+authSlice.js updates the Redux store based on API responses and authentication status.
+Component Update:
+
+File(s):
+components/Auth/Login.js, components/Auth/Logout.js receive updated state from Redux.
+User Feedback:
+
+File(s):
+components/Auth/Login.js provides feedback to the user based on authentication state.
+Detailed Diagram with Files and apiInterceptor Role
+plaintext
+Copy code
+User Interaction
+|
+v
+Dispatch API Request (Component)
+[components/Auth/Login.js]
+|
+v
+Redux Middleware (e.g., thunk/saga)
+[middleware/authMiddleware.js]
+|
+v
+API Call
+[api/apiClientBase.js, api/authApi.js]
+|
+v
+API Config
+[api/apiEndpoints.js]
+|
+v
+API Interceptor (Decides if auth is needed)
+[auth/apiInterceptor.js]
+|
+v
+If Auth Needed:
+|
+v
+Auth Status Check
+[auth/authStatus.js]
+|
+v
+Sending Request (Network Layer)
+|
+v
+Server Processing
+|
+v
+Database Interaction
+|
+v
+Receiving Response (Network Layer)
+|
+v
+API Interceptor (Response Handling)
+[auth/apiInterceptor.js]
+|
+v
+API Call Completion
+[api/apiClientBase.js]
+|
+v
+Redux Store Update (Action Dispatch to Reducer)
+[authSlice.js]
+|
+v
+Component Update (React Re-render)
+[components/Auth/Login.js]
+|
+v
+User Feedback
+[components/Auth/Login.js]

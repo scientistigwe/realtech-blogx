@@ -1,5 +1,7 @@
 import apiClient from "./../api/apiInterceptor";
-import { apiEndpoints } from "./apiEndpoints";
+import { apiEndpoints } from "./../api/apiEndpoints";
+
+console.log(`API Client (author.js): ${apiClient}`);
 
 // Helper function to replace placeholder in URL
 const replacePlaceholder = (url, id) => url.replace("<int:id>", id);
