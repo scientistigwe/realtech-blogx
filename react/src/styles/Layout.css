@@ -193,11 +193,45 @@ span {
 }
 
 /* Hero Carousel */
+.carousel-container {
+    position: relative;
+    height: 400px; /* Adjust the height as needed */
+    max-width: 100%;
+    overflow: hidden;
+}
+
 .hero-slide {
-    text-align: center;
-    padding: 50px;
-    height: 100vh;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background-color: #f8f9fa;
+}
+
+.carousel-caption {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    color: #fff;
+    text-align: center;
+}
+
+.carousel-item {
+    height: 100%;
+}
+
+.carousel-item img {
+    width: 100%;
+    height: auto; /* Adjust based on image aspect ratio */
+}
+
+.carousel-indicators {
+    bottom: 10px;
+}
+
+.carousel-control-prev, .carousel-control-next {
+    filter: invert(100%);
 }
 
 .hero-slide h1 {
@@ -212,4 +246,84 @@ span {
 
 .hero-content {
     padding: 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
 }
+
+/* Hero Carousel */
+.hero-carousel .carousel-item {
+    height: 100vh;
+    background-color: #f8f9fa;
+}
+
+.hero-carousel .hero-slide {
+    text-align: center;
+    padding: 50px;
+}
+
+.hero-carousel .hero-slide h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+}
+
+.hero-carousel .hero-slide p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+
+.hero-carousel .hero-slide .btn {
+    margin-top: 20px;
+}
+
+.hero-carousel {
+    height: 400px; /* Adjust as needed */
+  }
+  
+  .hero-carousel .carousel-item {
+    height: 100%;
+  }
+  
+  .hero-carousel .hero-slide {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+  }
+  
+  .hero-carousel .hero-content {
+    text-align: center;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+  }
+  
+  .hero-carousel h1,
+  .hero-carousel h3 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+  }
+  
+  .hero-carousel p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+  }
+  
+  .hero-carousel .btn {
+    margin-top: 20px;
+  }
+  
+  @media (max-width: 768px) {
+    .hero-carousel {
+      height: 300px;
+    }
+    
+    .hero-carousel h1,
+    .hero-carousel h3 {
+      font-size: 2rem;
+    }
+    
+    .hero-carousel p {
+      font-size: 1rem;
+    }
+  }

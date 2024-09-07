@@ -1,18 +1,13 @@
-import React from "react";
+import React, { useMemo } from "react";
 import PropTypes from "prop-types";
 import "./../../styles/Layout.css";
 import "./../../styles/Pages.css";
 import "./../../styles/Global.css";
 import "./../../styles/Components.css";
 
-/**
- * Utility function to get unique archive dates in YYYY-MM format
- * @param {Array} posts - Array of post objects with a date property
- * @returns {Array} - Array of unique archive dates sorted in descending order
- */
+// Utility function to get unique archive dates in YYYY-MM format
 const getUniqueArchives = (posts) => {
-  if (!Array.isArray(posts)) return []; // Handle non-array inputs
-
+  if (!Array.isArray(posts)) return [];
   const archives = posts.map((post) => {
     const date = new Date(post.date);
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
@@ -21,19 +16,13 @@ const getUniqueArchives = (posts) => {
     )}`;
   });
 
-  const uniqueArchives = [...new Set(archives)];
-  return uniqueArchives.sort((a, b) => b.localeCompare(a));
+  return [...new Set(archives)].sort((a, b) => b.localeCompare(a));
 };
 
-/**
- * Footer component displaying about info, useful links, archives, and social media links
- * Ensures API endpoints alignment for archives by generating links based on formatted dates.
- * @param {Object} props
- * @param {Array} [props.posts=[]] - Array of post objects to generate archives
- * @returns {JSX.Element}
- */
+// Footer Component
 const Footer = ({ posts = [] }) => {
-  const archives = getUniqueArchives(posts);
+  // Memoize archives to prevent recalculating unless posts change
+  const archives = useMemo(() => getUniqueArchives(posts), [posts]);
 
   return (
     <footer className="footer">

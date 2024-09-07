@@ -1,387 +1,203 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import searchIcon from "../../assets/icons/search.png";
+import { useCategoriesList } from "../../hooks/useCategories";
 import {
-  Navbar as BootstrapNavbar,
+  usePostsByCategory,
+  usePostsBySubcategory,
+  useSearchPosts,
+} from "../../hooks/usePosts";
+import {
+  Navbar,
   Nav,
-  NavDropdown,
   Form,
   FormControl,
   Button,
-  Modal,
+  Container,
+  Row,
+  Col,
   Spinner,
+  Modal,
 } from "react-bootstrap";
-import searchIcon from "../../assets/icons/search.png";
-import {
-  fetchPostsByCategory,
-  fetchPostsBySubcategory,
-  searchPosts,
-} from "../../api/apiClient"; // Adjust the import paths accordingly
+import { Search } from "lucide-react";
 
-// Enum values from Django models
-const primaryCategories = [
-  { value: "data", label: "Data" },
-  { value: "data_analysis", label: "Data Analysis" },
-  { value: "python_development", label: "Python Development" },
-  { value: "backend_development", label: "Backend Development" },
-  { value: "devops", label: "DevOps" },
-  { value: "cloud_engineering", label: "Cloud Engineering" },
-  { value: "artificial_intelligence", label: "Artificial Intelligence" },
-  { value: "machine_learning", label: "Machine Learning" },
-  { value: "data_science", label: "Data Science" },
-  { value: "web_development", label: "Web Development" },
-  { value: "mobile_development", label: "Mobile Development" },
-  { value: "security", label: "Security" },
-  { value: "game_development", label: "Game Development" },
-];
+const ImprovedNavbar = () => {
+  const { categories, error: categoriesError } = useCategoriesList();
+  const {
+    posts: categoryPosts,
+    loading: categoryLoading,
+    error: categoryError,
+    fetchPostsByCategory,
+  } = usePostsByCategory();
+  const {
+    posts: subcategoryPosts,
+    loading: subcategoryLoading,
+    error: subcategoryError,
+    fetchPostsBySubcategory,
+  } = usePostsBySubcategory();
+  const {
+    posts: searchPosts,
+    loading: searchLoading,
+    error: searchError,
+    searchPosts: searchPostsFn,
+  } = useSearchPosts();
 
-const subcategories = {
-  data: [
-    { value: "data_science", label: "Data Science" },
-    { value: "data_engineering", label: "Data Engineering" },
-    { value: "big_data", label: "Big Data" },
-    { value: "data_visualization", label: "Data Visualization" },
-    { value: "databases", label: "Databases" },
-    { value: "data_privacy_security", label: "Data Privacy and Security" },
-    { value: "data_migration", label: "Data Migration" },
-    { value: "etl", label: "ETL (Extract, Transform, Load)" },
-    { value: "data_cleaning", label: "Data Cleaning" },
-    { value: "data_integration", label: "Data Integration" },
-    { value: "data_governance", label: "Data Governance" },
-  ],
-  data_analysis: [
-    { value: "statistical_analysis", label: "Statistical Analysis" },
-    { value: "machine_learning", label: "Machine Learning" },
-    { value: "nlp", label: "Natural Language Processing (NLP)" },
-    { value: "data_mining", label: "Data Mining" },
-    { value: "predictive_analytics", label: "Predictive Analytics" },
-    { value: "time_series_analysis", label: "Time Series Analysis" },
-    { value: "business_intelligence", label: "Business Intelligence" },
-    { value: "text_analysis", label: "Text Analysis" },
-    { value: "sentiment_analysis", label: "Sentiment Analysis" },
-  ],
-  python_development: [
-    { value: "python_basics", label: "Python Basics" },
-    { value: "python_libraries", label: "Python Libraries" },
-    { value: "django_framework", label: "Django Framework" },
-    { value: "flask_framework", label: "Flask Framework" },
-    { value: "python_for_data_science", label: "Python for Data Science" },
-    {
-      value: "python_for_web_development",
-      label: "Python for Web Development",
-    },
-    {
-      value: "python_for_scientific_computing",
-      label: "Python for Scientific Computing",
-    },
-    { value: "python_automation", label: "Python Automation" },
-    { value: "python_for_networking", label: "Python for Networking" },
-    { value: "python_for_testing", label: "Python for Testing" },
-  ],
-  backend_development: [
-    { value: "api_development", label: "API Development" },
-    {
-      value: "microservices_architecture",
-      label: "Microservices Architecture",
-    },
-    { value: "database_design", label: "Database Design" },
-    { value: "web_frameworks", label: "Web Frameworks" },
-    { value: "server_administration", label: "Server Administration" },
-    { value: "performance_tuning", label: "Performance Tuning" },
-    { value: "cache_management", label: "Cache Management" },
-    { value: "backend_security", label: "Backend Security" },
-    { value: "application_architecture", label: "Application Architecture" },
-    { value: "message_brokers", label: "Message Brokers" },
-  ],
-  devops: [
-    { value: "ci_cd_pipelines", label: "CI/CD Pipelines" },
-    { value: "infrastructure_as_code", label: "Infrastructure as Code (IaC)" },
-    { value: "containerization", label: "Containerization" },
-    { value: "cloud_platforms", label: "Cloud Platforms" },
-    { value: "monitoring_logging", label: "Monitoring and Logging" },
-    { value: "devops_tools", label: "DevOps Tools" },
-    { value: "security_operations", label: "Security Operations" },
-    { value: "configuration_management", label: "Configuration Management" },
-    { value: "system_automation", label: "System Automation" },
-    { value: "build_automation", label: "Build Automation" },
-  ],
-  cloud_engineering: [
-    {
-      value: "cloud_computing_fundamentals",
-      label: "Cloud Computing Fundamentals",
-    },
-    { value: "cloud_security", label: "Cloud Security" },
-    { value: "serverless_computing", label: "Serverless Computing" },
-    { value: "cloud_migration", label: "Cloud Migration" },
-    { value: "cloud_cost_optimization", label: "Cloud Cost Optimization" },
-    { value: "multicloud_strategy", label: "Multicloud Strategy" },
-    { value: "cloud_natives", label: "Cloud Natives" },
-    { value: "cloud_monitoring", label: "Cloud Monitoring" },
-    { value: "cloud_automation", label: "Cloud Automation" },
-    { value: "edge_computing", label: "Edge Computing" },
-  ],
-  artificial_intelligence: [
-    { value: "general_ai", label: "General AI" },
-    { value: "computer_vision", label: "Computer Vision" },
-    { value: "robotics", label: "Robotics" },
-    { value: "reinforcement_learning", label: "Reinforcement Learning" },
-    { value: "ai_ethics", label: "AI Ethics" },
-    { value: "ai_policy", label: "AI Policy" },
-    { value: "knowledge_graph", label: "Knowledge Graph" },
-  ],
-  machine_learning: [
-    { value: "supervised_learning", label: "Supervised Learning" },
-    { value: "unsupervised_learning", label: "Unsupervised Learning" },
-    { value: "deep_learning", label: "Deep Learning" },
-    { value: "neural_networks", label: "Neural Networks" },
-    { value: "model_evaluation", label: "Model Evaluation" },
-    { value: "feature_engineering", label: "Feature Engineering" },
-    { value: "hyperparameter_tuning", label: "Hyperparameter Tuning" },
-    { value: "ml_pipelines", label: "ML Pipelines" },
-  ],
-  data_science: [
-    { value: "exploratory_data_analysis", label: "Exploratory Data Analysis" },
-    { value: "statistical_modeling", label: "Statistical Modeling" },
-    { value: "data_management", label: "Data Management" },
-    { value: "data_discovery", label: "Data Discovery" },
-    { value: "data_quality", label: "Data Quality" },
-    { value: "data_sharing", label: "Data Sharing" },
-  ],
-  web_development: [
-    { value: "frontend_development", label: "Frontend Development" },
-    { value: "javascript_frameworks", label: "JavaScript Frameworks" },
-    { value: "responsive_design", label: "Responsive Design" },
-    { value: "web_performance", label: "Web Performance" },
-    { value: "user_experience", label: "User Experience (UX)" },
-    { value: "user_interface", label: "User Interface (UI)" },
-  ],
-  mobile_development: [
-    { value: "android_development", label: "Android Development" },
-    { value: "ios_development", label: "iOS Development" },
-    {
-      value: "cross_platform_development",
-      label: "Cross-Platform Development",
-    },
-    { value: "mobile_user_experience", label: "Mobile User Experience" },
-    { value: "mobile_security", label: "Mobile Security" },
-    { value: "mobile_performance", label: "Mobile Performance" },
-  ],
-  security: [
-    { value: "network_security", label: "Network Security" },
-    { value: "application_security", label: "Application Security" },
-    { value: "penetration_testing", label: "Penetration Testing" },
-    { value: "incident_response", label: "Incident Response" },
-    { value: "vulnerability_management", label: "Vulnerability Management" },
-    { value: "security_compliance", label: "Security Compliance" },
-  ],
-  game_development: [
-    { value: "game_engine", label: "Game Engine" },
-    { value: "game_design", label: "Game Design" },
-    { value: "3d_modeling", label: "3D Modeling" },
-    { value: "game_animation", label: "Game Animation" },
-    { value: "multiplayer_gaming", label: "Multiplayer Gaming" },
-    { value: "vr_ar_development", label: "VR/AR Development" },
-  ],
-};
-
-const Navbar = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
   const [posts, setPosts] = useState([]);
-  const [user, setUser] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
-    // Function to check user authentication
-    const fetchUser = async () => {
-      try {
-        const response = await fetch("/api/auth/user/", {
-          method: "GET",
-          credentials: "include", // Include cookies for authentication
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        setUser(null);
-      }
-    };
+  React.useEffect(() => {
+    if (selectedCategory) {
+      fetchPostsByCategory(selectedCategory).then((data) => {
+        setPosts(data);
+        setShowModal(true);
+      });
+    }
+  }, [selectedCategory, fetchPostsByCategory]);
 
-    fetchUser();
-  }, []);
+  React.useEffect(() => {
+    if (selectedSubcategory) {
+      fetchPostsBySubcategory(selectedSubcategory).then((data) => {
+        setPosts(data);
+        setShowModal(true);
+      });
+    }
+  }, [selectedSubcategory, fetchPostsBySubcategory]);
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
-    setSelectedSubcategory(null); // Reset subcategory when category changes
+    setSelectedSubcategory(null);
   };
 
   const handleSubcategorySelect = (subcategory) => {
     setSelectedSubcategory(subcategory);
   };
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      if (selectedCategory) {
-        try {
-          setLoading(true);
-          const results = selectedSubcategory
-            ? await fetchPostsBySubcategory(selectedSubcategory)
-            : await fetchPostsByCategory(selectedCategory);
-          setPosts(results);
-        } catch (error) {
-          console.error("Error fetching posts:", error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-    fetchPosts();
-  }, [selectedCategory, selectedSubcategory]);
-
-  const handleSearch = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-    try {
-      const results = await searchPosts(searchTerm);
-      setSearchResults(results);
-    } catch (error) {
-      console.error("Error searching posts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearchTermChange = (event) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout/", {
-        method: "POST",
-        credentials: "include", // Include cookies for authentication
-      });
-      setUser(null);
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    const data = await searchPostsFn(searchTerm);
+    setPosts(data);
+    setShowModal(true);
   };
 
   return (
-    <BootstrapNavbar bg="light" expand="lg">
-      <BootstrapNavbar.Toggle aria-controls="basic-navbar-nav" />
-      <BootstrapNavbar.Collapse id="basic-navbar-nav">
-        <Nav className="mr-auto">
-          <NavDropdown title="Categories" id="basic-nav-dropdown">
-            {primaryCategories.map((category) => (
-              <NavDropdown.Item
-                key={category.value}
-                onClick={() => handleCategorySelect(category.value)}
+    <>
+      <Navbar bg="light" expand="lg" className="flex-column">
+        <Container fluid className="p-0">
+          <Row>
+            <Row className="w-100 mb-2 overflow-auto col-md-10 m-auto">
+              <Col>
+                <Nav className="flex-nowrap">
+                  {Object.entries(categories).map(([key, category]) => (
+                    <Nav.Link
+                      key={key}
+                      onClick={() => handleCategorySelect(key)}
+                      className={`px-3 ${
+                        selectedCategory === key ? "active fw-bold" : ""
+                      }`}
+                      style={{
+                        backgroundColor:
+                          selectedCategory === key ? "#e9ecef" : "transparent",
+                        borderRadius: "4px",
+                        transition: "background-color 0.3s ease",
+                      }}
+                    >
+                      {category.label}
+                    </Nav.Link>
+                  ))}
+                </Nav>
+              </Col>
+            </Row>
+            {selectedCategory && (
+              <Row
+                className="w-100 mb-2 overflow-auto col-md-10 m-auto"
+                style={{ backgroundColor: "#e9ecef" }}
               >
-                {category.label}
-              </NavDropdown.Item>
-            ))}
-          </NavDropdown>
-          {selectedCategory && (
-            <NavDropdown title="Subcategories" id="basic-nav-dropdown-sub">
-              {subcategories[selectedCategory]?.map((subcategory) => (
-                <NavDropdown.Item
-                  key={subcategory.value}
-                  onClick={() => handleSubcategorySelect(subcategory.value)}
-                >
-                  {subcategory.label}
-                </NavDropdown.Item>
-              ))}
-            </NavDropdown>
-          )}
-        </Nav>
-        <Form inline onSubmit={handleSearch}>
-          <FormControl
-            type="text"
-            placeholder="Search"
-            className="mr-sm-2"
-            value={searchTerm}
-            onChange={handleSearchTermChange}
-          />
-          <Button variant="outline-success" type="submit">
-            <img src={searchIcon} alt="Search" width="30" />
-          </Button>
-        </Form>
-      </BootstrapNavbar.Collapse>
+                <Col>
+                  <Nav className="flex-nowrap">
+                    {categories[selectedCategory]?.subcategories.map((sub) => (
+                      <Nav.Link
+                        key={sub}
+                        onClick={() => handleSubcategorySelect(sub)}
+                        className={`px-3 ${
+                          selectedSubcategory === sub ? "active fw-bold" : ""
+                        }`}
+                      >
+                        {sub
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (char) => char.toUpperCase())}
+                      </Nav.Link>
+                    ))}
+                  </Nav>
+                </Col>
+              </Row>
+            )}
+            <Row className="w-50 col-md-8 d-flex justify-center m-auto">
+              <Col>
+                <Form onSubmit={handleSearch} className="d-flex">
+                  <div className="position-relative w-100">
+                    <FormControl
+                      type="text"
+                      placeholder="Search"
+                      className="mr-sm-2 pr-5"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <Button
+                      variant="link"
+                      type="submit"
+                      className="position-absolute"
+                      style={{
+                        right: "10px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                      }}
+                    >
+                      <Search size={20} />
+                    </Button>
+                  </div>
+                </Form>
+              </Col>
+            </Row>
+          </Row>
+        </Container>
+      </Navbar>
 
-      {/* Loading Modal */}
-      {loading && (
-        <Modal show={loading} onHide={() => setLoading(false)} centered>
-          <Modal.Body>
-            <Spinner animation="border" />
-          </Modal.Body>
-        </Modal>
-      )}
-
-      {/* Search Results Modal */}
-      {searchResults.length > 0 && (
-        <Modal
-          show={searchResults.length > 0}
-          onHide={() => setSearchResults([])}
-          centered
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>Search Results</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <ul>
-              {searchResults.map((post) => (
-                <li key={post.id}>
-                  <Link to={`/posts/${post.id}`}>{post.title}</Link>
-                </li>
-              ))}
-            </ul>
-          </Modal.Body>
-        </Modal>
-      )}
-
-      {/* Posts Modal */}
-      {posts.length > 0 && (
-        <Modal show={posts.length > 0} onHide={() => setPosts([])} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Posts</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <ul>
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {selectedSubcategory
+              ? `Posts in ${selectedSubcategory
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (char) => char.toUpperCase())}`
+              : selectedCategory
+              ? `Posts in ${categories[selectedCategory]?.label}`
+              : "Search Results"}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {categoryLoading || subcategoryLoading || searchLoading ? (
+            <div className="text-center">
+              <Spinner animation="border" />
+            </div>
+          ) : posts.length > 0 ? (
+            <ul className="list-unstyled">
               {posts.map((post) => (
-                <li key={post.id}>
-                  <Link to={`/posts/${post.id}`}>{post.title}</Link>
+                <li key={post.id} className="mb-3">
+                  <h5>{post.title}</h5>
+                  <p>{post.content.substring(0, 100)}...</p>
                 </li>
               ))}
             </ul>
-          </Modal.Body>
-        </Modal>
-      )}
-
-      {/* User Greeting and Logout */}
-      {user ? (
-        <div>
-          <span>Welcome, {user.username}!</span>
-          <Button
-            onClick={handleLogout}
-            variant="outline-danger"
-            className="ml-2"
-          >
-            Logout
-          </Button>
-        </div>
-      ) : (
-        <Link to="/login" className="btn btn-outline-primary">
-          Login
-        </Link>
-      )}
-    </BootstrapNavbar>
+          ) : (
+            <p>No posts found.</p>
+          )}
+        </Modal.Body>
+      </Modal>
+    </>
   );
 };
 
-export default Navbar;
+export default ImprovedNavbar;

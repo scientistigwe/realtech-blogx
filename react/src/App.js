@@ -1,103 +1,52 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage";
-import PostsListPage from "./pages/posts/PostsListPage";
-import PostDetailPage from "./pages/posts/PostDetailPage";
-import CreatePostPage from "./pages/posts/CreatePostPage";
-import UpdatePostPage from "./pages/posts/UpdatePostPage";
-import ProfilePage from "./pages/authenticationAndUserManagement/ProfilePage";
-import AuthorListPage from "./pages/authenticationAndUserManagement/AuthorListPage";
-import AuthorProfilePage from "./pages/authenticationAndUserManagement/AuthorProfilePage";
-import TagListPage from "./pages/TagListPage";
-import SearchResultsPage from "./pages/SearchResultsPage";
-import AnalyticsPage from "./pages/AnalyticsPage";
-import RecommendationsPage from "./pages/RecommendationsPage";
-import ModerationPage from "./pages/ModerationPage";
-import ContactAuthor from "./components/Authors/ContactAuthor";
-import NotFoundPage from "./pages/NotFoundPage";
-import Login from "./components/Auth/Login";
-import Register from "./components/Auth/Register";
-import PasswordReset from "./components/Auth/PasswordReset";
-import CommentCreate from "./components/Comments/CommentCreate";
-import CommentList from "./components/Comments/CommentList";
-import ProtectedRoute from "./components/common/ProtectedRoute";
-import Profile from "./components/Profile/UserProfile";
-import ProfileUpdateForm from "./components/Profile/ProfileUpdateForm";
+import Layout from "./pages/Layouts";
 
-const App = () => {
-  return (
+// Pages
+import AuthPages from "./pages/AuthPages";
+import AnalyticsDashboardPage from "./pages/AnalyticsDashboardPage";
+import AuthorPages from "./pages/AuthorPages";
+import CommentsPages from "./pages/CommentsPages";
+import HomePage from "./pages/HomePage";
+import ModerationPage from "./pages/ModerationPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import NotificationPage from "./pages/NotificationsPage";
+import PostsPages from "./pages/PostsPages";
+import ProfilePage from "./pages/ProfilePage";
+import RecommendationsPages from "./pages/RecommendationsPages";
+import SearchPage from "./pages/SearchPage";
+import ErrorBoundary from "./components/ErrorBoundary";
+
+const App = () => (
+  <ErrorBoundary>
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/posts" element={<PostsListPage />} />
-        <Route path="/posts/:id" element={<PostDetailPage />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/password-reset" element={<PasswordReset />} />
-        <Route path="/authors" element={<AuthorListPage />} />
-        <Route path="/authors/:id" element={<AuthorProfilePage />} />
-        <Route path="/tags" element={<TagListPage />} />
-        <Route path="/search" element={<SearchResultsPage />} />
-        <Route path="/contact" element={<ContactAuthor />} />
-        <Route path="/comments/create" element={<CommentCreate />} />
-        <Route path="/comments" element={<CommentList />} />
+        <Route
+          path="/"
+          element={
+            <Layout>
+              <HomePage />
+            </Layout>
+          }
+        />
+        <Route path="/auth/*" element={<AuthPages />} />
+        <Route path="/analytics" element={<AnalyticsDashboardPage />} />
+        <Route path="/authors" element={<AuthorPages />} />
+        <Route path="/comments" element={<CommentsPages />} />
+        <Route path="/notifications" element={<NotificationPage />} />
+        <Route path="/recommendations/*" element={<RecommendationsPages />} />
+        <Route path="/search" element={<SearchPage />} />
 
         {/* Protected Routes */}
-        <Route
-          path="/create-post"
-          element={<ProtectedRoute element={<CreatePostPage />} />}
-        />
-        <Route
-          path="/posts/edit/:id"
-          element={<ProtectedRoute element={<UpdatePostPage />} />}
-        />
-        <Route
-          path="/profile/:id"
-          element={<ProtectedRoute element={<ProfilePage />} />}
-        />
-        <Route
-          path="/profile/:id/view"
-          element={<ProtectedRoute element={<Profile />} />}
-        />
-        <Route
-          path="/profile/:id/update"
-          element={<ProtectedRoute element={<ProfileUpdateForm />} />}
-        />
-        <Route
-          path="/analytics"
-          element={<ProtectedRoute element={<AnalyticsPage />} />}
-        />
-        <Route
-          path="/recommendations"
-          element={<ProtectedRoute element={<RecommendationsPage />} />}
-        />
-        <Route
-          path="/moderation"
-          element={<ProtectedRoute element={<ModerationPage />} />}
-        />
-        {/* <Route
-          path="/moderation/approved"
-          element={<ProtectedRoute element={<ApprovedContentPage />} />}
-        />
-        <Route
-          path="/moderation/rejected"
-          element={<ProtectedRoute element={<RejectedContentPage />} />}
-        />
-        <Route
-          path="/moderation/users"
-          element={<ProtectedRoute element={<UserManagementPage />} />}
-        />
-        <Route
-          path="/moderation/settings"
-          element={<ProtectedRoute element={<ModeratorSettingsPage />} />}
-        /> */}
+        <Route path="/posts/*" element={<PostsPages />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/moderation" element={<ModerationPage />} />
 
-        {/* Catch-All Route for undefined routes */}
+        {/* Catch-All Route */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
-  );
-};
-
+  </ErrorBoundary>
+);
 export default App;

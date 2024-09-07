@@ -1,32 +1,126 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
-import { useCreatePost } from "./../../hooks/usePost";
-import "./../../styles/Components.css"; // Adjust the path according to your project structure
+import { useCreatePost } from "../../hooks/usePosts";
+import { useCategoriesList } from "../../hooks/useCategories";
+import "./../../styles/Components.css";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { coy } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const CreatePost = () => {
   const {
+    categories,
+    error: categoriesError,
+    loading: categoriesLoading,
+    fetchCategories,
+  } = useCategoriesList();
+  const {
     formData,
-    image,
+    setFormData,
+    handleChange,
+    handleSubmit,
     loading,
     error,
     successMessage,
-    handleChange,
-    handleSubmit,
-  } = useCreatePost();
+  } = useCreatePost({
+    title: "",
+    content: "",
+    excerpt: "",
+    metaDescription: "",
+    metaTitle: "",
+    metaKeywords: "",
+    publicationDate: "",
+    coreCategory: "",
+    subcategory: "",
+    tags: "",
+    thumbnail: null,
+    isPublic: false,
+  });
+
+  const [filteredSubcategories, setFilteredSubcategories] = useState([]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
+    if (formData.coreCategory) {
+      setFilteredSubcategories(
+        categories.filter(
+          (category) => category.parent_id === formData.coreCategory
+        )
+      );
+    } else {
+      setFilteredSubcategories([]);
+    }
+  }, [formData.coreCategory, categories]);
+
+  const displayTags = Array.isArray(formData.tags)
+    ? formData.tags.join(", ")
+    : "";
+
+  const CodeBlock = ({ children }) => {
+    const match = children.trim().match(/^```(\w+)?\n([\s\S]+?)\n```$/);
+    if (!match) return <>{children}</>;
+
+    const [, lang = "javascript", code] = match;
+    return (
+      <SyntaxHighlighter
+        language={lang}
+        style={coy}
+        customStyle={{ marginBottom: "1rem" }}
+      >
+        {code.trim()}
+      </SyntaxHighlighter>
+    );
+  };
+
+  const renderContent = () => {
+    const lines = formData.content.split("\n");
+    const renderedLines = [];
+    let inCodeBlock = false;
+    let codeBlock = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      if (line === "```") {
+        if (inCodeBlock) {
+          renderedLines.push(
+            <CodeBlock key={i}>{codeBlock.join("\n")}</CodeBlock>
+          );
+          codeBlock = [];
+          inCodeBlock = false;
+        } else {
+          inCodeBlock = true;
+        }
+      } else {
+        if (inCodeBlock) {
+          codeBlock.push(lines[i]);
+        } else {
+          renderedLines.push(<div key={i}>{line}</div>);
+        }
+      }
+    }
+
+    if (inCodeBlock) {
+      renderedLines.push(
+        <CodeBlock key={lines.length}>{codeBlock.join("\n")}</CodeBlock>
+      );
+    }
+
+    return renderedLines;
+  };
+
+  const isSubmitDisabled = loading;
 
   return (
     <div className="container mt-4">
-      <h1>Create Post</h1>
-      {successMessage && (
-        <Alert variant="success" dismissible>
-          {successMessage}
-        </Alert>
+      {error && <Alert variant="danger">{error}</Alert>}
+      {successMessage && <Alert variant="success">{successMessage}</Alert>}
+      {categoriesError && (
+        <Alert variant="danger">{categoriesError.message}</Alert>
       )}
-      {error && (
-        <Alert variant="danger" dismissible>
-          {error}
-        </Alert>
-      )}
+      {categoriesLoading && <Spinner animation="border" />}
       <Form onSubmit={handleSubmit}>
         <Form.Group controlId="formPostTitle">
           <Form.Label>Title</Form.Label>
@@ -42,15 +136,16 @@ const CreatePost = () => {
 
         <Form.Group controlId="formPostContent" className="mt-3">
           <Form.Label>Content</Form.Label>
-          <Form.Control
-            as="textarea"
-            rows={5}
-            placeholder="Enter post content"
+          <textarea
+            className="form-control"
+            rows={10}
+            placeholder={`Enter post content (code blocks start and end with \`\`\`)`}
             name="content"
             value={formData.content}
             onChange={handleChange}
-            required
-          />
+          >
+            {renderContent()}
+          </textarea>
         </Form.Group>
 
         <Form.Group controlId="formPostExcerpt" className="mt-3">
@@ -109,16 +204,22 @@ const CreatePost = () => {
         </Form.Group>
 
         <Form.Group controlId="formPostPrimaryCategory" className="mt-3">
-          <Form.Label>Primary Category</Form.Label>
+          <Form.Label>Core Category*</Form.Label>
           <Form.Control
             as="select"
-            name="primaryCategory"
-            value={formData.primaryCategory}
+            name="coreCategory"
+            value={formData.coreCategory}
             onChange={handleChange}
             required
           >
-            <option value="">Select a primary category</option>
-            {/* Render primary categories here */}
+            <option value="">Select a core category</option>
+            {categories
+              .filter((cat) => !cat.parent_id)
+              .map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
           </Form.Control>
         </Form.Group>
 
@@ -129,9 +230,14 @@ const CreatePost = () => {
             name="subcategory"
             value={formData.subcategory}
             onChange={handleChange}
+            disabled={!formData.coreCategory}
           >
             <option value="">Select a subcategory</option>
-            {/* Render subcategories here */}
+            {filteredSubcategories.map((subcategory) => (
+              <option key={subcategory.id} value={subcategory.id}>
+                {subcategory.name}
+              </option>
+            ))}
           </Form.Control>
         </Form.Group>
 
@@ -139,34 +245,35 @@ const CreatePost = () => {
           <Form.Label>Tags (comma-separated)</Form.Label>
           <Form.Control
             type="text"
-            placeholder="e.g., Data Science, Machine Learning"
+            placeholder="Enter tags"
             name="tags"
             value={formData.tags}
             onChange={handleChange}
           />
         </Form.Group>
 
-        <Form.Group controlId="formPostImage" className="mt-3">
-          <Form.Label>Thumbnail Image</Form.Label>
-          <Form.Control type="file" accept="image/*" onChange={handleChange} />
+        <Form.Group controlId="formPostThumbnail" className="mt-3">
+          <Form.Label>Thumbnail</Form.Label>
+          <Form.Control
+            type="file"
+            name="thumbnail"
+            onChange={(e) =>
+              setFormData({ ...formData, thumbnail: e.target.files[0] })
+            }
+          />
         </Form.Group>
 
-        <Form.Group controlId="formPostIsPublic" className="mt-3">
+        <Form.Group controlId="formIsPublic" className="mt-3">
           <Form.Check
             type="checkbox"
-            label="Make this post public"
+            label="Make post public"
             name="isPublic"
             checked={formData.isPublic}
             onChange={handleChange}
           />
         </Form.Group>
 
-        <Button
-          variant="primary"
-          type="submit"
-          className="mt-4"
-          disabled={loading}
-        >
+        <Button variant="primary" type="submit" disabled={isSubmitDisabled}>
           {loading ? <Spinner animation="border" size="sm" /> : "Create Post"}
         </Button>
       </Form>

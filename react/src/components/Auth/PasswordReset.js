@@ -1,48 +1,31 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import api from "./../../api/apiClient"; // Ensure this is correctly aligned with your API client
+import { useResetPassword } from "../../hooks/useAuth"; // Adjust import path as necessary
 
 const PasswordReset = ({ mode }) => {
-  const [email, setEmail] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState(""); // Error state
-  const [loading, setLoading] = useState(false); // Loading state
+  const {
+    email,
+    setEmail,
+    currentPassword,
+    setCurrentPassword,
+    newPassword,
+    setNewPassword,
+    message,
+    error,
+    loading,
+    handleSubmit,
+  } = useResetPassword(mode);
 
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage("");
-    setError(""); // Clear previous errors
-    setLoading(true); // Start loading
-
-    try {
-      if (mode === "request") {
-        // Handle password reset request
-        await api.auth.resetPassword({ email });
-        setMessage("A password reset link has been sent to your email.");
-      } else if (mode === "reset") {
-        // Handle password reset
-        await api.auth.resetPasswordConfirm({ currentPassword, newPassword });
-        setMessage("Password has been updated successfully.");
-        setCurrentPassword("");
-        setNewPassword("");
-        setTimeout(() => {
-          navigate("/login"); // Redirect to login page after a brief delay
-        }, 2000);
-      }
-    } catch (err) {
-      console.error("Error:", err);
-      setError(
-        err.response?.data?.detail ||
-          "Failed to perform the operation. Please try again."
-      );
-    } finally {
-      setLoading(false); // End loading
+  // Redirect after successful password reset
+  React.useEffect(() => {
+    if (message && mode === "reset") {
+      setTimeout(() => {
+        navigate("/auth/login"); // Redirect to login page after a brief delay
+      }, 2000);
     }
-  };
+  }, [message, mode, navigate]);
 
   return (
     <div className="password-reset-page container mt-4">

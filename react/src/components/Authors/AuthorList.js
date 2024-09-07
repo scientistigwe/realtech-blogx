@@ -1,35 +1,17 @@
-import React, { useEffect, useState } from "react";
-import api from "./../../api/apiClient";
+import React from "react";
+import { Spinner, Alert } from "react-bootstrap";
+import { useUsersList } from "../../hooks/useUsers"; // Import the hook for fetching user list
 
 const AuthorList = () => {
-  const [authors, setAuthors] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const fetchAuthors = async () => {
-      setLoading(true);
-      setError(""); // Clear previous errors
-
-      try {
-        const response = await api.authors.list(); // Fetch authors from API
-        setAuthors(response.data); // Assuming response.data contains the list of authors
-      } catch (err) {
-        console.error("Error fetching authors:", err);
-        setError(
-          err.response?.data?.detail ||
-            "Failed to fetch authors. Please try again."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAuthors();
-  }, []);
+  const { users: authors, loading, error } = useUsersList(); // Fetch list of authors
 
   if (loading) return <div>Author list Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (error)
+    return (
+      <div>
+        <Alert variant="danger">{error}</Alert>
+      </div>
+    );
 
   return (
     <div className="author-list-page">
@@ -38,7 +20,7 @@ const AuthorList = () => {
         {authors.length > 0 ? (
           authors.map((author) => (
             <li key={author.id}>
-              <a href={`/authors/${author.id}`}>{author.name}</a>
+              <a href={`/authors/${author.id}`}>{author.username}</a>
             </li>
           ))
         ) : (

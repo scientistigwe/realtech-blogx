@@ -1,47 +1,77 @@
-import React, { useEffect, useState } from "react";
-import { Link, useHistory } from "react-router-dom";
-import api from "./../../api/apiClient";
-
+import React, { useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useGetCurrentUserProfile, useLogout } from "../../hooks/useAuth";
 import "./../../styles/Layout.css";
 import "./../../styles/Pages.css";
 import "./../../styles/Global.css";
 import "./../../styles/Components.css";
 
 const Header = () => {
-  const history = useHistory();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await api.get("/auth/users/me"); // Protected endpoint to check user info
-        if (response.status === 200) {
-          setIsAuthenticated(true);
-          setUser(response.data); // Set user data from response
-        } else {
-          setIsAuthenticated(false);
-          setUser(null);
-        }
-      } catch (error) {
-        setIsAuthenticated(false);
-        setUser(null);
-      }
-    };
-
-    checkAuth();
-  }, []);
+  const navigate = useNavigate();
+  const { data: user, error: userError } = useGetCurrentUserProfile();
+  const { logout } = useLogout();
 
   const handleLogout = async () => {
     try {
-      await api.post("/auth/token/logout/"); // Endpoint to handle JWT logout
-      setIsAuthenticated(false);
-      setUser(null);
-      history.push("/login");
+      await logout();
+      navigate("/auth/login"); // Navigate to login after logout
     } catch (error) {
       console.error("Error logging out:", error);
     }
   };
+
+  const isAuthenticated = !!user;
+
+  const authLinks = useMemo(
+    () => (
+      <>
+        <Link
+          className="btn btn-outline-secondary mx-2"
+          to={`/profile/${user?.id}`}
+          aria-label={`Profile of ${user?.username}`}
+        >
+          Profile
+        </Link>
+        <button
+          className="btn btn-outline-secondary mx-2"
+          onClick={handleLogout}
+          aria-label="Logout"
+        >
+          Logout
+        </button>
+        <Link
+          className="btn btn-outline-secondary mx-2"
+          to="/notifications"
+          aria-label="Notifications"
+        >
+          Notifications
+        </Link>
+      </>
+    ),
+    [user, handleLogout]
+  );
+
+  const guestLinks = useMemo(
+    () => (
+      <>
+        <Link
+          className="btn btn-outline-secondary mx-2"
+          to="/auth/login"
+          aria-label="Login"
+        >
+          Login
+        </Link>
+        <Link
+          className="btn btn-outline-secondary mx-2"
+          to="/auth/register"
+          aria-label="Sign Up"
+        >
+          Sign Up
+        </Link>
+      </>
+    ),
+    []
+  );
 
   return (
     <header className="header">
@@ -80,48 +110,7 @@ const Header = () => {
           >
             Home
           </Link>
-          {isAuthenticated && user ? (
-            <>
-              <Link
-                className="btn btn-outline-secondary mx-2"
-                to={`/profile/${user.id}`}
-                aria-label={`Profile of ${user.username}`}
-              >
-                Profile
-              </Link>
-              <button
-                className="btn btn-outline-secondary mx-2"
-                onClick={handleLogout}
-                aria-label="Logout"
-              >
-                Logout
-              </button>
-              <Link
-                className="btn btn-outline-secondary mx-2"
-                to="/notifications"
-                aria-label="Notifications"
-              >
-                Notifications
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                className="btn btn-outline-secondary mx-2"
-                to="/login"
-                aria-label="Login"
-              >
-                Login
-              </Link>
-              <Link
-                className="btn btn-outline-secondary mx-2"
-                to="/register"
-                aria-label="Sign Up"
-              >
-                Sign Up
-              </Link>
-            </>
-          )}
+          {isAuthenticated ? authLinks : guestLinks}
           <Link
             className="btn btn-outline-secondary mx-2"
             to="/archives"

@@ -8,14 +8,16 @@ import {
   Alert,
   Breadcrumb,
 } from "react-bootstrap";
-import useAuth from "./../../hooks/userAuth"; // Adjust import path as necessary
+import { useNavigate } from "react-router-dom";
+import { useCreateJwt } from "../../hooks/useAuth";
 import "./../../styles/Layout.css";
 import "./../../styles/Pages.css";
 import "./../../styles/Global.css";
 import "./../../styles/Components.css";
 
 const Login = () => {
-  const { login, loading, error } = useAuth();
+  const { login, loading, error } = useCreateJwt(); // Ensure useCreateJwt is correctly imported and used
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,16 +27,13 @@ const Login = () => {
     const password = formData.get("password");
 
     try {
-      // Call the login function from useAuth
-      const userData = await login({ username, password });
-
-      if (userData) {
-        // Handle successful login, e.g., redirect to the profile page
-        console.log("Login successful. User Data:", userData);
-        window.location.href = `/profile/${userData.user_id}/`;
+      console.log("Attempting login...");
+      const { user_id } = await login({ username, password }); // Ensure login function is called correctly
+      console.log("Login successful");
+      if (user_id) {
+        navigate(`/profile/${user_id}/`);
       }
     } catch (err) {
-      // Error is handled by useAuth and displayed in the component
       console.error(err);
     }
   };

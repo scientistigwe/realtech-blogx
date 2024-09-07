@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
-import api from "./../../api/apiClient"; // Import API endpoints
+import {
+  useUpvotePost,
+  useDownvotePost,
+  useDeletePost,
+} from "../../hooks/usePosts"; // Adjust import path as necessary
 import "./../../styles/Components.css"; // Import the CSS file for styling
 
 const PostCard = ({ post, currentUser }) => {
@@ -33,11 +37,15 @@ const PostCard = ({ post, currentUser }) => {
       : `http://localhost:8000${thumbnail}`
     : null;
 
+  const { mutate: upvotePost } = useUpvotePost();
+  const { mutate: downvotePost } = useDownvotePost();
+  const { mutate: deletePost } = useDeletePost();
+
   const handleUpvote = async () => {
     try {
-      const response = await api.posts.upvote(id); // Adjust the API call to match your implementation
+      const response = await upvotePost(id); // Adjust the API call to match your implementation
       if (response.status === 200) {
-        setLocalUpvotes(localUpvotes + 1);
+        setLocalUpvotes((prev) => prev + 1);
       } else {
         console.error("Upvote failed");
       }
@@ -48,9 +56,9 @@ const PostCard = ({ post, currentUser }) => {
 
   const handleDownvote = async () => {
     try {
-      const response = await api.posts.downvote(id); // Adjust the API call to match your implementation
+      const response = await downvotePost(id); // Adjust the API call to match your implementation
       if (response.status === 200) {
-        setLocalDownvotes(localDownvotes + 1);
+        setLocalDownvotes((prev) => prev + 1);
       } else {
         console.error("Downvote failed");
       }
@@ -62,7 +70,7 @@ const PostCard = ({ post, currentUser }) => {
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       try {
-        const response = await api.posts.delete(id); // Adjust the API call to match your implementation
+        const response = await deletePost(id); // Adjust the API call to match your implementation
         if (response.status === 204) {
           navigate("/posts");
         } else {

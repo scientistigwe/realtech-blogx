@@ -1,55 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
-import { useUserProfile, useUpdateUserProfile } from "./../../hooks/useUser";
+import { useGetCurrentUserProfile } from "./../../hooks/useAuth";
+import { useGetUserById } from "./../../hooks/useAuth"; // Adjust the import if necessary
 import "../../styles/Pages.css";
 
 const UserProfile = () => {
-  const { username } = useParams();
-  const { profile, loading, error } = useUserProfile(username);
-  const {
-    updateProfile,
-    loading: updateLoading,
-    error: updateError,
-  } = useUpdateUserProfile();
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    bio: "",
-  });
+  const { profile, error: profileError } = useGetCurrentUserProfile();
+  const { user } = useGetUserById(); // Assuming useAuth provides current user information
 
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        username: profile.username || "",
-        email: profile.email || "",
-        bio: profile.bio || "",
-      });
-    }
-  }, [profile]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await updateProfile(formData);
-      alert("Profile updated successfully!");
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  if (loading) {
-    return <div className="text-center mt-4">Loading profile...</div>;
-  }
-
-  if (error) {
+  if (!profile && profileError) {
     return (
       <div className="alert alert-danger" role="alert">
-        {error.message}
+        {profileError}
       </div>
     );
   }
@@ -57,87 +19,88 @@ const UserProfile = () => {
   return (
     <div className="container mt-4 profile-page">
       <h1 className="mb-4 text-center">User Profile</h1>
-      <div className="profile-section mb-4 p-4 rounded shadow-sm">
-        <div className="profile-container">
-          <div className="profile-picture">
-            <img
-              src={profile?.profilePicture || "/default-avatar.png"}
-              alt="Profile"
-              className="img-fluid rounded-circle"
-              width={150}
-              height={150}
-            />
-          </div>
-          <div className="profile-details">
-            <h2>
-              {profile?.firstname} {profile?.lastname}
-            </h2>
-            <p className="profile-email">Email: {profile?.email}</p>
-            <p className="profile-bio">Bio: {profile?.bio}</p>
-            <p>Location: {profile?.location}</p>
-            <p>
-              Website:{" "}
-              {profile?.website && (
-                <a
-                  href={profile.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {profile.website}
-                </a>
-              )}
-            </p>
+      {profile && (
+        <div className="profile-section mb-4 p-4 rounded shadow-sm">
+          <div className="profile-container d-flex align-items-center">
+            <div className="profile-picture">
+              <img
+                src={profile.profile_picture || "/default-avatar.png"}
+                alt="Profile"
+                className="img-fluid rounded-circle"
+                width={150}
+                height={150}
+              />
+            </div>
+            <div className="profile-details ms-4">
+              <h2>
+                {profile.first_name} {profile.last_name}
+              </h2>
+              <p>Username: {profile.username}</p>
+              <p>Email: {profile.email}</p>
+              <p>
+                Biography:{" "}
+                <span
+                  dangerouslySetInnerHTML={{
+                    __html: profile.bio || "Not provided",
+                  }}
+                />
+              </p>
+              <p>Location: {profile.location || "Not provided"}</p>
+              <p>
+                Website:{" "}
+                {profile.website && (
+                  <a
+                    href={profile.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {profile.website}
+                  </a>
+                )}
+              </p>
+              <p>
+                Twitter:{" "}
+                {profile.social_profiles?.twitter && (
+                  <a
+                    href={profile.social_profiles.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {profile.social_profiles.twitter}
+                  </a>
+                )}
+              </p>
+              <p>
+                Facebook:{" "}
+                {profile.social_profiles?.facebook && (
+                  <a
+                    href={profile.social_profiles.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {profile.social_profiles.facebook}
+                  </a>
+                )}
+              </p>
+              <p>
+                LinkedIn:{" "}
+                {profile.social_profiles?.linkedin && (
+                  <a
+                    href={profile.social_profiles.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {profile.social_profiles.linkedin}
+                  </a>
+                )}
+              </p>
+              <p>Role: {profile.role}</p>
+              <p>Last Active: {profile.last_active || "Not available"}</p>
+              {profile.is_author && <p>Author Status: Author</p>}
+            </div>
           </div>
         </div>
-        <form onSubmit={handleSubmit} className="mt-4">
-          <h3>Update Profile</h3>
-          <div className="mb-3">
-            <label htmlFor="username" className="form-label">
-              Username:
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleInputChange}
-              className="form-control"
-            />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email:
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="form-control"
-            />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="bio" className="form-label">
-              Bio:
-            </label>
-            <textarea
-              id="bio"
-              name="bio"
-              value={formData.bio}
-              onChange={handleInputChange}
-              className="form-control"
-            />
-          </div>
-          {updateLoading && <div>Updating profile...</div>}
-          {updateError && (
-            <div className="alert alert-danger">{updateError.message}</div>
-          )}
-          <button type="submit" className="btn btn-primary">
-            Update Profile
-          </button>
-        </form>
-      </div>
+      )}
     </div>
   );
 };

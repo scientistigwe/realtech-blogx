@@ -1,65 +1,66 @@
-import React, { useEffect } from "react";
-import PropTypes from "prop-types";
+import React, { useEffect, useState } from "react";
 import { Carousel } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "./../../styles/Layout.css";
+import { useMostViewedPosts } from "../../hooks/usePosts";
 
-console.log("HeroCarousel starting...");
+const HeroCarousel = () => {
+  const { posts, error, loading, fetchMostViewedPosts } = useMostViewedPosts();
+  const [lastFetchTime, setLastFetchTime] = useState(
+    localStorage.getItem("lastFetchTime") || 0
+  );
 
-const HeroCarousel = ({ posts, onPostsLoaded }) => {
-  useEffect(() => {
-    if (posts.length > 0 && onPostsLoaded) {
-      console.log("Posts loaded into carousel: ", posts);
-      onPostsLoaded(posts); // Notify the parent component
+  const fetchData = async () => {
+    const currentTime = Date.now();
+    // Check if 24 hours have passed since the last fetch
+    if (currentTime - lastFetchTime >= 24 * 60 * 60 * 1000) {
+      try {
+        await fetchMostViewedPosts();
+        setLastFetchTime(currentTime);
+        localStorage.setItem("lastFetchTime", currentTime);
+      } catch (fetchError) {
+        console.error("Error fetching most viewed posts:", fetchError);
+      }
     }
-  }, [posts, onPostsLoaded]);
+  };
 
-  if (!posts || posts.length === 0) {
-    console.log("No posts available for the carousel.");
-    return (
-      <div className="text-center">No posts available for the carousel.</div>
-    ); // Centered text for no posts
-  }
+  useEffect(() => {
+    fetchData();
+  }, [fetchMostViewedPosts]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error)
+    return <div>Error: {error.message || "Failed to load posts."}</div>;
+
+  if (!posts || posts.length === 0) return <div>No posts available.</div>;
 
   return (
-    <div className="carousel-container">
-      <Carousel>
-        <Carousel.Item>
-          <div className="carousel-caption">
+    <Carousel className="hero-carousel">
+      <Carousel.Item>
+        <div className="hero-slide">
+          <div className="hero-content">
             <h1>Welcome to RealTech BlogX</h1>
             <p>Explore our latest blogs and insights.</p>
             <Link to="/blogs" className="btn btn-primary">
               Explore Blogs
             </Link>
           </div>
-        </Carousel.Item>
-
-        {posts.slice(0, 3).map((post) => (
-          <Carousel.Item key={post.id}>
-            <div className="carousel-caption">
+        </div>
+      </Carousel.Item>
+      {posts.slice(0, 3).map((post) => (
+        <Carousel.Item key={post.id}>
+          <div className="hero-slide">
+            <div className="hero-content">
               <h3>{post.title}</h3>
               <p>{post.excerpt}</p>
               <Link to={`/posts/${post.id}`} className="btn btn-secondary">
                 Read More
               </Link>
             </div>
-          </Carousel.Item>
-        ))}
-      </Carousel>
-    </div>
+          </div>
+        </Carousel.Item>
+      ))}
+    </Carousel>
   );
-};
-
-HeroCarousel.propTypes = {
-  posts: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      title: PropTypes.string.isRequired,
-      excerpt: PropTypes.string.isRequired,
-    })
-  ).isRequired,
-  onPostsLoaded: PropTypes.func,
 };
 
 export default HeroCarousel;

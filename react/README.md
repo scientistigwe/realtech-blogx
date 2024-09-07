@@ -202,3 +202,105 @@ Component Update (React Re-render)
 v
 User Feedback
 [components/Auth/Login.js]
+
+Auth Hooks (useAuth.js)
+javascript
+Copy code
+// Authentication Hooks
+export const useCreateJwt = () => { /_ implementation _/ };
+export const useRefreshJwt = () => { /_ implementation _/ };
+export const useVerifyJwt = () => { /_ implementation _/ };
+export const useRegister = () => { /_ implementation _/ };
+export const useLogout = () => { /_ implementation _/ };
+export const useUsersList = () => { /_ implementation _/ };
+export const useCreateUser = () => { /_ implementation _/ };
+export const useActivateUser = () => { /_ implementation _/ };
+export const useGetCurrentUserProfile = () => { /_ implementation _/ };
+export const useUpdateUserProfile = () => { /_ implementation _/ };
+export const usePartialUpdateUserProfile = () => { /_ implementation _/ };
+export const useDeleteUserProfile = () => { /_ implementation _/ };
+export const useResendActivation = () => { /_ implementation _/ };
+export const useResetPassword = () => { /_ implementation _/ };
+export const useResetPasswordConfirm = () => { /_ implementation _/ _/;
+export const useResetUsername = () => { /_ implementation _/ };
+export const useResetUsernameConfirm = () => { /_ implementation _/ };
+export const useSetPassword = () => { /_ implementation _/ };
+export const useSetUsername = () => { /_ implementation _/ };
+export const useGetUserById = () => { /_ implementation _/ };
+export const useUpdateUserById = () => { /_ implementation _/ };
+export const usePartialUpdateUserById = () => { /_ implementation _/ };
+export const useDeleteUserById = () => { /_ implementation _/ };
+Users Hooks (useUsers.js)
+javascript
+Copy code
+// Users Hooks
+export const useListUsers = () => { /_ implementation _/ };
+export const useCreateUser = () => { /_ implementation _/ };
+export const useUpdateUserProfile = () => { /_ implementation _/ };
+export const useGetCurrentUserProfile = () => { /_ implementation _/ };
+export const usePartialUpdateUserProfile = () => { /_ implementation _/ };
+export const useDeleteUserProfile = () => { /_ implementation _/ };
+export const useGetRole = () => { /_ implementation _/ };
+export const useContactAuthor = () => { /_ implementation _/ };
+Comments Hooks (useComments.js)
+javascript
+Copy code
+// Comments Hooks
+export const useListComments = () => { /_ implementation _/ };
+export const useCreateComment = () => { /_ implementation _/ };
+export const useGetCommentById = () => { /_ implementation _/ };
+export const useUpdateComment = () => { /_ implementation _/ };
+export const usePartialUpdateComment = () => { /_ implementation _/ };
+export const useDeleteComment = () => { /_ implementation _/ };
+export const useUpvoteComment = () => { /_ implementation _/ };
+export const useDownvoteComment = () => { /_ implementation _/ };
+Tags Hooks (useTags.js)
+javascript
+Copy code
+// Tags Hooks
+export const useListTags = () => { /_ implementation _/ };
+export const useCreateTag = () => { /_ implementation _/ };
+export const useGetTagById = () => { /_ implementation _/ };
+export const useUpdateTag = () => { /_ implementation _/ };
+export const usePartialUpdateTag = () => { /_ implementation _/ };
+export const useDeleteTag = () => { /_ implementation _/ };
+Notifications Hooks (useNotifications.js)
+javascript
+Copy code
+// Notifications Hooks
+export const useListNotifications = () => { /_ implementation _/ };
+export const useCreateNotification = () => { /_ implementation _/ };
+export const useReadNotification = () => { /_ implementation _/ };
+export const useUpdateNotification = () => { /_ implementation _/ };
+export const usePartialUpdateNotification = () => { /_ implementation _/ };
+export const useDeleteNotification = () => { /_ implementation _/ };
+export const useMarkAsRead = () => { /_ implementation _/ };
+Categories Hooks (useCategories.js)
+javascript
+Copy code
+// Categories Hooks
+export const useListCategories = () => { /_ implementation _/ };
+export const useCreateCategory = () => { /_ implementation _/ };
+export const useGetCategoryById = () => { /_ implementation _/ };
+export const useUpdateCategory = () => { /_ implementation _/ };
+export const usePartialUpdateCategory = () => { /_ implementation _/ };
+export const useDeleteCategory = () => { /_ implementation _/ };
+Posts Hooks (usePosts.js)
+javascript
+Copy code
+// Posts Hooks
+export const useListPosts = () => { /_ implementation _/ };
+export const useCreatePost = () => { /_ implementation _/ };
+export const usePostsByCategory = () => { /_ implementation _/ };
+export const usePostsBySubcategory = () => { /_ implementation _/ };
+export const useMostViewedPosts = () => { /_ implementation _/ };
+export const usePostsByUser = () => { /_ implementation _/ };
+export const useGetPostById = () => { /_ implementation _/ };
+export const useUpdatePost = () => { /_ implementation _/ };
+export const usePartialUpdatePost = () => { /_ implementation _/ };
+export const useDeletePost = () => { /_ implementation _/ };
+export const useUpvotePost = () => { /_ implementation _/ };
+export const useDownvotePost = () => { /_ implementation _/ };
+export const useManageTags = () => { /_ implementation _/ };
+export const usePostEngagements = () => { /_ implementation _/ };
+export const useCheckSlug = () => { /_ implementation \*/ };

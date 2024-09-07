@@ -1,58 +1,41 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from cms.views.custom_user_view import CustomUserViewSet
-from cms.views.post_view import TagViewSet, PostViewSet, PostEngagementViewSet
-from cms.views.notification_view import NotificationListView, NotificationUpdateView, NotificationCreateView
-from cms.views.search_view import SearchPostsViewSet
-from cms.views.moderation_view import PendingContentListView, ApproveContentView, RejectContentView
-from cms.views.comment_view import (
-    CommentListCreateView, CommentRetrieveUpdateDestroyView, CommentUpvoteView, CommentDownvoteView
-)
-from cms.views.custom_authentication_view import CustomRegisterView, CustomLoginView
-from cms.views.moderation_view import (
-    PendingContentListView,
-    ApproveContentView,
-    RejectContentView
-)
-from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
+from .views import CustomUserViewSet, CategoryViewSet, TagViewSet, PostViewSet, CommentViewSet, NotificationViewSet, RegisterView, LogoutView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from rest_framework import permissions
 
+schema_view = get_schema_view(
+   openapi.Info(
+      title="RealTech BlogX API",
+      default_version='v1',
+      description="API documentation for RealTech BlogX project.",
+      terms_of_service="https://www.yourapp.com/terms/",
+      contact=openapi.Contact(email="contact@realtechblogx.local"),
+      license=openapi.License(name="BSD License"),
+   ),
+   public=True,
+   permission_classes=(permissions.AllowAny,),
+)
 
-# Set up the DRF router
 router = DefaultRouter()
-router.register(r'tags', TagViewSet, basename= 'tag')
-router.register(r'posts', PostViewSet, basename= 'post')
-router.register(r'post-engagements', PostEngagementViewSet, basename= 'post-engagement')
 router.register(r'users', CustomUserViewSet, basename='user')
-router.register(r'search/posts', SearchPostsViewSet, basename='search-posts')
+router.register(r'categories', CategoryViewSet, basename='category')
+router.register(r'tags', TagViewSet, basename='tag')
+router.register(r'posts', PostViewSet, basename='post')
+router.register(r'comments', CommentViewSet, basename='comment')
+router.register(r'notifications', NotificationViewSet, basename='notification')
 
-# Define URL patterns
+
 urlpatterns = [
-
-    path('auth/register/', CustomRegisterView.as_view(), name='register'),
-    path('auth/login/', CustomLoginView.as_view(), name='custom_login'),
-    path('auth/jwt/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('auth/jwt/verify/', TokenVerifyView.as_view(), name='token_verify'),
-
-    # Upvote and downvote endpoints for comments
-    path('comments/<int:comment_id>/upvote/', CommentUpvoteView.as_view(), name='comment_upvote'),
-    path('comments/<int:comment_id>/downvote/', CommentDownvoteView.as_view(), name='comment_downvote'),
-
-    # Comments
-    path('comments/', CommentListCreateView.as_view(), name='comment-list-create'),
-    path('comments/<int:pk>/', CommentRetrieveUpdateDestroyView.as_view(), name='comment-retrieve-update-destroy'),
-    path('comments/<int:pk>/upvote/', CommentUpvoteView.as_view(), name='comment-upvote'),
-    path('comments/<int:pk>/downvote/', CommentDownvoteView.as_view(), name='comment-downvote'),
-
-    # Notifications
-    path('notifications/', NotificationListView.as_view(), name='notification-list'),
-    path('notifications/<int:pk>/read/', NotificationUpdateView.as_view(), name='notification-update'),
-    path('notifications/create/', NotificationCreateView.as_view(), name='notification-create'),
-
-    # Moderation endpoints
-    path('moderation/pending-content/', PendingContentListView.as_view(), name='pending-content-list'),
-    path('moderation/approve-content/<int:id>/', ApproveContentView.as_view(), name='approve-content'),
-    path('moderation/reject-content/<int:id>/', RejectContentView.as_view(), name='reject-content'),
-
-    # Include router URLs
     path('', include(router.urls)),
+        path('register/', RegisterView.as_view(), name='register'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]

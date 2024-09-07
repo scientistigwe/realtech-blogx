@@ -1,45 +1,26 @@
 import React from "react";
-import PostCard from "./PostCard";
-import useAuth from "../../hooks/userAuth"; // Custom hook for current user
-import { usePostList } from "../../hooks/usePost"; // Custom hook for fetching posts
+import { Spinner, Alert, ListGroup } from "react-bootstrap";
+import { usePostsList } from "../../hooks/usePosts";
 
 const PostList = () => {
-  const { currentUser } = useAuth(); // Get the current user
-  const { posts, loading, error } = usePostList(); // Fetch posts
+  const { posts, error } = usePostsList();
 
-  if (loading) {
-    return (
-      <div className="container mt-4">
-        <p>Loading posts...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mt-4">
-        <p>Error loading posts: {error}</p>
-      </div>
-    );
-  }
-
-  if (!posts || posts.length === 0) {
-    return (
-      <div className="container mt-4">
-        <p>No posts available.</p>
-      </div>
-    );
-  }
+  if (error) return <Alert variant="danger">Error fetching posts</Alert>;
 
   return (
-    <div className="container mt-4">
-      <div className="row">
-        {posts.map((post) => (
-          <div className="col-md-6 mb-4" key={post.id}>
-            <PostCard post={post} currentUser={currentUser} />
-          </div>
-        ))}
-      </div>
+    <div className="post-list">
+      <h3>Posts</h3>
+      {posts.length > 0 ? (
+        <ListGroup>
+          {posts.map((post) => (
+            <ListGroup.Item key={post.id}>
+              <a href={`/posts/${post.id}`}>{post.title}</a>
+            </ListGroup.Item>
+          ))}
+        </ListGroup>
+      ) : (
+        <p>No posts found.</p>
+      )}
     </div>
   );
 };

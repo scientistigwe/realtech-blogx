@@ -1,19 +1,15 @@
 import React from "react";
-import { Route, Navigate } from "react-router-dom";
-import useAuth from "./../../hooks/userAuth"; // Custom hook to check authentication status
+import { Navigate, Outlet } from "react-router-dom";
+import { useIsAuthenticated } from "../../hooks/useAuth";
 
-const ProtectedRoute = ({ element, ...rest }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = () => {
+  const { isAuthenticated, loading } = useIsAuthenticated();
 
   if (loading) {
-    return <div>Loading...</div>; // Optionally show a spinner or loading indicator
+    return <div>Loading...</div>;
   }
 
-  return isAuthenticated ? (
-    <Route {...rest} element={element} />
-  ) : (
-    <Navigate to="/login" />
-  );
+  return isAuthenticated ? <Outlet /> : <Navigate to="/auth/login" />;
 };
 
 export default ProtectedRoute;

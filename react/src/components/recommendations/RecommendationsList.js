@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "./../../api/apiClient";
 
-console.log(`API Client (recommendation.js): ${api}`);
-
 function RecommendationsList({ userId }) {
   const [recommendations, setRecommendations] = useState([]);
 

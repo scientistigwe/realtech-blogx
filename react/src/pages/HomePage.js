@@ -1,59 +1,87 @@
-import React, { useEffect, useState, useRef } from "react";
-import { Breadcrumb } from "react-bootstrap";
+import React, { useEffect, useState } from "react";
+import { Breadcrumb, Spinner, Alert, Container, Button } from "react-bootstrap";
 import HeroCarousel from "../components/Layouts/HeroCarousel";
 import PostList from "../components/Posts/PostList";
-import TagList from "../components/Tags/TagList"; // Ensure this component exists
-import api from "./../api/apiClient"; // Adjust the path according to your project structure
-
-console.log("Homepage starting...");
+import { usePostsList } from "../hooks/usePosts";
+import { useTagsList } from "../hooks/useTags";
 
 const HomePage = () => {
-  const [allPosts, setAllPosts] = useState([]);
-  const [carouselLoaded, setCarouselLoaded] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const hasFetched = useRef(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const {
+    posts: allPosts,
+    error: postsError,
+    loading: postsLoading,
+    fetchPosts,
+  } = usePostsList();
+  const {
+    tags,
+    error: tagsError,
+    loading: tagsLoading,
+    fetchTags,
+  } = useTagsList();
 
-  useEffect(() => {
-    if (!hasFetched.current) {
-      console.log("Fetching posts for the first time...");
-      const fetchPosts = async () => {
-        try {
-          const response = await api.posts.fetchAll(); // Using your apiClient's fetchAll method
-          setAllPosts(response.data);
-        } catch (error) {
-          console.error("Failed to fetch posts:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchPosts();
-      hasFetched.current = true;
+  const fetchData = async () => {
+    try {
+      await Promise.all([fetchPosts(), fetchTags()]);
+    } catch (error) {
+      console.error("Error fetching data:", error);
     }
-  }, []);
-
-  const handlePostsLoaded = () => {
-    console.log("Carousel has loaded posts.");
-    setCarouselLoaded(true);
   };
 
-  const remainingPosts = allPosts.slice(3);
+  useEffect(() => {
+    fetchData();
+  }, [retryCount]); // Remove timer, directly call fetchData
 
-  if (loading) {
-    return <div>Loading posts...</div>;
-  }
+  const handleRetry = () => {
+    setRetryCount((prevCount) => prevCount + 1);
+  };
+
+  // Extract the first 3 posts for the HeroCarousel
+  const heroPosts = Array.isArray(allPosts) ? allPosts.slice(0, 3) : [];
+  // Extract the remaining posts for the PostList
+  const remainingPosts = Array.isArray(allPosts) ? allPosts.slice(3) : [];
+
+  const renderError = (error) => {
+    if (typeof error === "string") {
+      return error;
+    } else if (error && typeof error === "object") {
+      if (error.message === "ERR_INSUFFICIENT_RESOURCES") {
+        return "The system is currently overloaded. Please try again later.";
+      } else if (error.status === 429) {
+        return "Too many requests. Please wait a moment before trying again.";
+      }
+      return error.message || JSON.stringify(error);
+    }
+    return "An unknown error occurred";
+  };
+
+  const isLoading = postsLoading || tagsLoading;
+  const hasError = postsError || tagsError;
 
   return (
-    <div>
+    <Container>
       <Breadcrumb>
         <Breadcrumb.Item active>Home</Breadcrumb.Item>
       </Breadcrumb>
 
-      <HeroCarousel posts={allPosts} onPostsLoaded={handlePostsLoaded} />
-
-      {carouselLoaded && <PostList posts={remainingPosts} />}
-
-      <TagList />
-    </div>
+      {isLoading && (
+        <Spinner animation="border" className="d-block mx-auto mt-4" />
+      )}
+      {hasError && (
+        <Alert variant="danger" className="text-center mt-4">
+          {renderError(postsError || tagsError)}
+          <Button onClick={handleRetry} className="mt-2">
+            Retry
+          </Button>
+        </Alert>
+      )}
+      {!isLoading && !hasError && (
+        <>
+          <HeroCarousel posts={heroPosts} />
+          <PostList posts={remainingPosts} />
+        </>
+      )}
+    </Container>
   );
 };
 
