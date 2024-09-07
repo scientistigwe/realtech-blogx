@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Delete Category</h2>
+<form id="deleteCategoryForm">
+    <div>
+        <label for="id">Category ID:</label>
+        <input type="text" id="id" name="id" required>
+    </div>
+    <button type="submit">Delete Category</button>
+    <div id="deleteCategoryError" style="color: red;"></div>
+</form>
+
+{% endblock %}

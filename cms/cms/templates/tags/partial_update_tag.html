@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Partially Update Tag</h1>
+<form id="partial-update-tag-form">
+    <label for="partial-update-tag-id">Tag ID:</label>
+    <input type="text" id="partial-update-tag-id" name="id" required>
+    <label for="partial-update-tag-name">New Tag Name (optional):</label>
+    <input type="text" id="partial-update-tag-name" name="name">
+    <button type="submit">Update Tag</button>
+</form>
+
+{% endblock %}

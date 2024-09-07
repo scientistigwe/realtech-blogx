@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - RealBlogX{% endblock %}
+
+{% block content %}
+<main class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <h2 class="text-center mb-4">Login</h2>
+
+            <!-- Display error messages if any -->
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong>There was an issue with your login:</strong>
+                <ul>
+                    {% for field in form %}
+                    {% for error in field.errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Login Form -->
+            <form id="loginForm" method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control" id="id_username" required>
+                </div>
+                <div class="mb-3">
+                    <label for="id_password" class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" id="id_password" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+
+            <div class="text-center mt-3">
+                <a href="{% url 'password_reset' %}">Forgot your password?</a>
+            </div>
+            <div class="text-center mt-3">
+                <a href="{% url 'register' %}">Don't have an account? Sign up here!</a>
+            </div>
+        </div>
+    </div>
+</main>
+
+{% endblock %}

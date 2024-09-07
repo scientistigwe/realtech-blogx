@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Post Engagements</h1>
+    <!-- Loading Spinner -->
+    <div id="loading" class="d-none">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Post Engagements -->
+    <div id="post-engagements">
+        <p id="engagements-upvotes"></p>
+        <p id="engagements-downvotes"></p>
+        <button id="engage-post" class="btn btn-primary">Engage with Post</button>
+    </div>
+
+    <!-- Error Message -->
+    <div id="error-message" class="alert alert-danger d-none"></div>
+    <div id="success-message" class="alert alert-success d-none"></div>
+</div>

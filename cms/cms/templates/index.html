@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}RealTech BlogX - Home{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div>
+        <!-- Hero section -->
+        import React from "react";
+        import { Carousel } from "react-bootstrap";
+        import { Link } from "react-router-dom";
+        import useHeroData from "./../../hooks/useHeroData";
+
+        // Memoized HeroSlide component to prevent unnecessary re-renders
+        const HeroSlide = React.memo(({ title, excerpt, link }) => (
+        <div className="hero-slide">
+            <div className="hero-content">
+                <h3>{title}</h3>
+                <p>{excerpt}</p>
+                <Link to={link} className="btn btn-secondary">
+                Read More
+                </Link>
+            </div>
+        </div>
+        ));
+
+        const HeroCarousel = () => {
+        const { posts, error, loading } = useHeroData();
+
+        // Display loading, error, or no posts message
+        if (loading) return <div>Loading...</div>;
+        if (error) {
+        // If it's a 429 error, show a specific message or retry button
+        if (error === "429") {
+        return (
+        <div>
+            <p>Too many requests. Please try again later.</p>
+        </div>
+        );
+        }
+        return <div>Error: {error}</div>;
+        }
+        if (!posts || posts.length === 0) return <div>No posts available.</div>;
+
+        return (
+        <Carousel className="hero-carousel">
+            {/* Static welcome slide */}
+            <Carousel.Item>
+                <HeroSlide title="Welcome to RealTech BlogX" excerpt="Explore our latest blogs and insights."
+                    link="/blogs" />
+            </Carousel.Item>
+            {/* Dynamic slides for the most viewed posts */}
+            {posts.slice(0, 3).map((post) => (
+            <Carousel.Item key={post.id}>
+                <HeroSlide title={post.title} excerpt={post.excerpt} link={`/posts/${post.id}`} />
+            </Carousel.Item>
+            ))}
+        </Carousel>
+        );
+        };
+
+        export default HeroCarousel;
+
+    </div>
+    <div class="md:col-span-2">
+        <h1 class="text-3xl font-bold mb-6">Latest Posts</h1>
+        <div id="latest-posts" class="space-y-6">
+            <!-- Posts will be dynamically inserted here -->
+        </div>
+        <button id="load-more" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Load
+            More</button>
+    </div>
+    <div class="md:col-span-1">
+        <h2 class="text-2xl font-bold mb-4">Featured Posts</h2>
+        <div id="featured-posts" class="space-y-4">
+            <!-- Featured posts will be dynamically inserted here -->
+        </div>
+        <h2 class="text-2xl font-bold mt-8 mb-4">Categories</h2>
+        <div id="categories-list" class="space-y-2">
+            <!-- Categories will be dynamically inserted here -->
+        </div>
+        <h2 class="text-2xl font-bold mt-8 mb-4">Popular Tags</h2>
+        <div id="tags-list" class="flex flex-wrap gap-2">
+            <!-- Tags will be dynamically inserted here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let currentPage = 1;
+    const postsPerPage = 10;
+
+    function fetchPosts() {
+        axios.get(BASE_URL + `posts/?page=${currentPage}&page_size=${postsPerPage}`)
+            .then(response => {
+                const posts = response.data.results;
+                const postsContainer = document.getElementById('latest-posts');
+                posts.forEach(post => {
+                    postsContainer.innerHTML += `
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h2 class="text-xl font-bold mb-2">${post.title}</h2>
+                            <p class="text-gray-600 mb-4">${post.excerpt}</p>
+                            <a href="/post/${post.id}" class="text-blue-500 hover:underline">Read more</a>
+                        </div>
+                    `;
+                });
+                currentPage++;
+                if (!response.data.next) {
+                    document.getElementById('load-more').style.display = 'none';
+                }
+            })
+            .catch(error => console.error('Error fetching posts:', error));
+    }
+
+    function fetchFeaturedPosts() {
+        axios.get(BASE_URL + 'posts/featured/')
+            .then(response => {
+                const featuredPosts = response.data;
+                const featuredContainer = document.getElementById('featured-posts');
+                featuredPosts.forEach(post => {
+                    featuredContainer.innerHTML += `
+                        <div class="bg-white p-4 rounded-lg shadow-md">
+                            <h3 class="text-lg font-semibold mb-2">${post.title}</h3>
+                            <a href="/post/${post.id}" class="text-blue-500 hover:underline">Read more</a>
+                        </div>
+                    `;
+                });
+            })
+            .catch(error => console.error('Error fetching featured posts:', error));
+    }
+
+    function fetchCategories() {
+        axios.get(BASE_URL + 'categories/')
+            .then(response => {
+                const categories = response.data;
+                const categoriesContainer = document.getElementById('categories-list');
+                categories.forEach(category => {
+                    categoriesContainer.innerHTML += `
+                        <a href="/category/${category.slug}" class="block text-blue-500 hover:underline">${category.name}</a>
+                    `;
+                });
+            })
+            .catch(error => console.error('Error fetching categories:', error));
+    }
+
+    function fetchTags() {
+        axios.get(BASE_URL + 'tags/')
+            .then(response => {
+                const tags = response.data;
+                const tagsContainer = document.getElementById('tags-list');
+                tags.forEach(tag => {
+                    tagsContainer.innerHTML += `
+                        <a href="/tag/${tag.slug}" class="bg-gray-200 px-2 py-1 rounded-full text-sm text-gray-700 hover:bg-gray-300">${tag.name}</a>
+                    `;
+                });
+            })
+            .catch(error => console.error('Error fetching tags:', error));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchPosts();
+        fetchFeaturedPosts();
+        fetchCategories();
+        fetchTags();
+
+        document.getElementById('load-more').addEventListener('click', fetchPosts);
+    });
+</script>
+{% endblock %}

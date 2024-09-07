@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Update Comment</h1>
+<form id="update-comment-form">
+    <input type="number" name="id" placeholder="Comment ID" required><br>
+    <textarea name="text" placeholder="Enter updated comment" required></textarea><br>
+    <button type="submit">Submit</button>
+</form>
+
+{% endblock %}

@@ -1,0 +1,62 @@
+<nav>
+    <div class="navbar">
+        <ul>
+            <li><a href="/categories" class="hover:text-blue-200">Categories</a></li>
+            <li><a href="/tags" class="hover:text-blue-200">Tags</a></li>
+            <li>
+                Search
+                <form id="search-form" method="GET" action="{% url 'search' %}">
+                    <input type="text" id="search-input" name="q" placeholder="Search posts"
+                        value="{{ search_query|default:'' }}" autocomplete="off" />
+                    <button type="submit">Search</button>
+                </form>
+                <ul id="search-results">
+                    {% if search_results %}
+                    {% for post in search_results %}
+                    <li>
+                        <a href="{% url 'post_detail' post.id %}">{{ post.title }}</a>
+                    </li>
+                    {% empty %}
+                    <li>No results found.</li>
+                    {% endfor %}
+                    {% endif %}
+                </ul>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const searchInput = document.getElementById("search-input");
+        const searchResults = document.getElementById("search-results");
+
+        const apiSearchEndpoint = "{{ API_ENDPOINTS.search }}";  // Dynamically include the search API endpoint
+
+        searchInput.addEventListener("input", async () => {
+            const query = searchInput.value.trim();
+            if (query) {
+                try {
+                    const response = await fetch(`${apiSearchEndpoint}?q=${encodeURIComponent(query)}`);
+                    if (!response.ok) throw new Error("Network response was not ok");
+                    const data = await response.json();
+
+                    searchResults.innerHTML = ""; // Clear previous results
+                    if (data.length > 0) {
+                        data.forEach(post => {
+                            const li = document.createElement("li");
+                            li.innerHTML = `<a href="/posts/${post.id}">${post.title}</a>`;
+                            searchResults.appendChild(li);
+                        });
+                    } else {
+                        searchResults.innerHTML = "<li>No results found.</li>";
+                    }
+                } catch (error) {
+                    console.error("Error fetching search results:", error);
+                }
+            } else {
+                searchResults.innerHTML = "";
+            }
+        });
+    });
+</script>

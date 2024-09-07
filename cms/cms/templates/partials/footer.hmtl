@@ -1,0 +1,57 @@
+<!-- templates/partials/footer.html -->
+<footer class="footer">
+    <div class="footer-container">
+        <!-- About Section -->
+        <div class="footer-section about">
+            <h5>About RealTech BlogX</h5>
+            <p>
+                RealTech BlogX is your gateway to Data, Development, and DevOps mastery. Our blog features insights, tutorials, and tips to help you excel in these fields.
+            </p>
+        </div>
+
+        <!-- Useful Links Section -->
+        <div class="footer-section links">
+            <h5>Useful Links</h5>
+            <ul class="footer-links">
+                <li><a href="{% url 'home' %}" aria-label="Home">Home</a></li>
+                <li><a href="{% url 'posts' %}" aria-label="Posts">Posts</a></li>
+                <li><a href="{% url 'about' %}" aria-label="About Us">About Us</a></li>
+                <li><a href="{% url 'contact' %}" aria-label="Contact">Contact</a></li>
+                <li><a href="{% url 'privacy_policy' %}" aria-label="Privacy Policy">Privacy Policy</a></li>
+            </ul>
+        </div>
+
+        <!-- Archives Section -->
+        <div class="footer-section archives">
+            <h5>Archives</h5>
+            <ul class="footer-links">
+                {% for archive in archives %}
+                    <li>
+                        <a href="{% url 'archives_by_date' archive %}" aria-label="Archive {{ archive }}">
+                            {{ archive }}
+                        </a>
+                    </li>
+                {% empty %}
+                    <li>No archives available</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Social Media Links Section -->
+        <div class="footer-section social">
+            <h5>Follow Us</h5>
+            <ul class="footer-links d-flex">
+                <li><a href="https://twitter.com/YourTwitterHandle" target="_blank" rel="noopener noreferrer" aria-label="Twitter profile"><i class="fab fa-twitter"></i> Twitter</a></li>
+                <li><a href="https://facebook.com/YourFacebookPage" target="_blank" rel="noopener noreferrer" aria-label="Facebook profile"><i class="fab fa-facebook-f"></i> Facebook</a></li>
+                <li><a href="https://linkedin.com/company/YourLinkedInProfile" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile"><i class="fab fa-linkedin-in"></i> LinkedIn</a></li>
+                <li><a href="https://instagram.com/YourInstagramHandle" target="_blank" rel="noopener noreferrer" aria-label="Instagram profile"><i class="fab fa-instagram"></i> Instagram</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Footer Bottom -->
+    <div class="footer-bottom">
+        <p class="text-center">&copy; {{ current_year }} RealTech BlogX. All rights reserved.</p>
+        <a href="#top" class="back-to-top" aria-label="Back to top">Back to top</a>
+    </div>
+</footer>

@@ -1,0 +1,20 @@
+{% block content %}
+<h1>Search Posts</h1>
+
+<form id="search-form">
+    <div class="form-group">
+        <label for="search-query">Search:</label>
+        <input type="text" id="search-query" name="query" class="form-control" placeholder="Enter search query">
+    </div>
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+<div id="search-results">
+    <!-- Search results will be injected here -->
+</div>
+
+<div id="pagination" class="mt-3">
+    <!-- Pagination will be injected here -->
+</div>
+
+{% endblock %}
