@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+{% load static %}
 
 <head>
     <meta charset="utf-8">
@@ -39,6 +40,14 @@
     <!-- Theme Color for Mobile Browsers -->
     <meta name="theme-color" content="#000000" />
 
+    <!-- Custom CSS -->
+    <link rel='style' href="{% static 'css/App.css' %}" />
+    <link rel='style' href="{% static 'css/Components.css' %}" />
+    <link rel='style' href="{% static 'css/Global.css' %}" />
+    <link rel='style' href="{% static 'css/index.css' %}" />
+    <link rel='style' href="{% static 'css/Layout.css' %}" />
+    <link rel='style' href="{% static 'css/Pages.css' %}" />
+
     <title>{% block title %}RealTech BlogX{% endblock %}</title>
 </head>
 
@@ -49,7 +58,7 @@
     <header class="header">
         <div class="container">
             <div class="logo">
-                <a href="{% url 'home' %}" aria-label="Homepage" style="text-decoration: none;">
+                <a href="{% url 'homepage' %}" aria-label="Homepage" style="text-decoration: none;">
                     <img src="{% static 'images/logo.png' %}" alt="RealBlogX brand logo" class="brand-logo" width="60"
                         height="60" style="margin-bottom: 20px;">
                     <span style="font-size: 2em; color: white; margin-left: 10px;">RealTeach BlogX</span>
@@ -79,10 +88,29 @@
         const BASE_URL = "http://localhost:8000/cms-api/v1/";
         // Add any global JavaScript here
     </script>
-    <script src="{% static 'js/apiEndpoints.js' %}"></script>
-    <script src="{% static 'js/apiUtils.js' %}"></script>
-    <script src="{% static 'js/api.js' %}"></script>
-    <script src="{% static 'js/postApi.js' %}"></script>
+    <script src="{% static 'js/api/apiEndpoints.js' %}"></script>
+    <script src="{% static 'js/api/apiUtils.js' %}"></script>
+    <script src="{% static 'js/api/api.js' %}"></script>
+    <script src="{% static 'js/api/authApi.js' %}"></script>
+    <script src="{% static 'js/api/accountManagerApi.js' %}"></script>
+    <script src="{% static 'js/api/apiUtils.js' %}"></script>
+    <script src="{% static 'js/api/categoryApi.js' %}"></script>
+    <script src="{% static 'js/api/notificationApi.js' %}"></script>
+    <script src="{% static 'js/api/tagsApi.js' %}"></script>
+    <script src="{% static 'js/api/commentApi.js' %}"></script>
+    <script src="{% static 'js/api/postsApi.js' %}"></script>
+    <script src="{% static 'js/api/userApi.js' %}"></script>
+    <script src="{% static 'js/auth.js' %}"></script>
+    <script src="{% static 'js/update_account.js ' %}"></script>
+    <script src="{% static 'js/userProfile.js' %}"></script>
+    <script src="{% static 'js/categories.js' %}"></script>
+    <script src="{% static 'js/posts.js' %}"></script>
+    <script src="{% static 'js/tags.js' %}"></script>
+    <script src="{% static 'js/notifications.js' %}"></script>
+    <script src="{% static 'js/ navbar.js' %}"></script>
+    <script src="{% static 'js/comments.js' %}"></script>
+
+
 </body>
 
 </html>

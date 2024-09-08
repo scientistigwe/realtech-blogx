@@ -5,7 +5,7 @@
             <li><a href="/tags" class="hover:text-blue-200">Tags</a></li>
             <li>
                 Search
-                <form id="search-form" method="GET" action="{% url 'search' %}">
+                <form id="search-form" method="GET" action="{% url 'posts_search' %}">
                     <input type="text" id="search-input" name="q" placeholder="Search posts"
                         value="{{ search_query|default:'' }}" autocomplete="off" />
                     <button type="submit">Search</button>

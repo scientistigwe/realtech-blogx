@@ -131,10 +131,13 @@ AUTHENTICATION_BACKENDS = [
 CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
 
+# Paths for templates
+TEMPLATES_DIR = BASE_DIR / 'templates'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [TEMPLATES_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -150,9 +153,12 @@ TEMPLATES = [
 ROOT_URLCONF = 'realtech_blogx.urls'
 WSGI_APPLICATION = 'realtech_blogx.wsgi.application'
 
+# Static and media files settings
 STATIC_URL = '/static/'
-MEDIA_URL = '/media/'
+STATICFILES_DIRS = [BASE_DIR / 'static']  # Point to your static directory
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 if not DEBUG:
