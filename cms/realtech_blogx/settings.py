@@ -155,7 +155,7 @@ WSGI_APPLICATION = 'realtech_blogx.wsgi.application'
 
 # Static and media files settings
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']  # Point to your static directory
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'cms', 'cms', 'static')]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'

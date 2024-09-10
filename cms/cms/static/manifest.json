@@ -1,0 +1,26 @@
+{
+    "name": "RealTeach Blogx",
+    "short_name": "Blogx",
+    "description": "RealTech BlogX - Your Gateway to Data, Development, and DevOps Mastery",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#007bff",
+    "orientation": "portrait",
+    "icons": [
+      {
+        "src": "/static/icons/logo.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/static/icons/logo.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ],
+    "scope": "/",
+    "lang": "en",
+    "dir": "ltr"
+  }
+  
