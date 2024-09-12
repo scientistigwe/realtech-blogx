@@ -1,0 +1,49 @@
+/* styles/Users.css */
+
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    margin-bottom: 1rem;
+    border: 2px solid #ddd; /* Optional border styling */
+  }
+  
+  .profile-picture.default {
+    background-color: #f0f0f0; /* Light background for default avatar */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .profile-picture.default img {
+    width: 100px;
+    height: 100px;
+  }
+  
+  form .form-control {
+    margin-bottom: 1rem;
+  }
+  
+  button {
+    margin-top: 1rem;
+  }
+  
+  /* src/styles/UserProfile.css */
+.user-profile {
+  text-align: center;
+}
+
+.profile-picture {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+}
+
+.user-profile h1 {
+  margin-top: 10px;
+}
+
+.user-profile p {
+  margin-top: 5px;
+}

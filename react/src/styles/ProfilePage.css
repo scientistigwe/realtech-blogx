@@ -1,0 +1,38 @@
+/* src/styles/UserProfilePage.css */
+.user-profile-page {
+    padding: 20px;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 20px;
+  }
+  
+  .upper-section {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    height: 50vh; /* Occupies upper half of the page */
+  }
+  
+  .profile-side {
+    padding: 20px;
+    border-right: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .posts-side {
+    padding: 20px;
+    overflow-y: auto; /* Ensures posts list is scrollable if it gets too long */
+  }
+  
+  .lower-section {
+    padding: 20px;
+    background-color: #f9f9f9;
+    height: 50vh; /* Occupies lower half of the page */
+  }
+  
+  .user-posts-section,
+.post-analytics-section {
+  margin-top: 40px;
+}

@@ -1,0 +1,82 @@
+/* components/Navbar.css */
+.navbar {
+    margin-bottom: 20px;
+  }
+  
+  .dropdown-menu {
+    min-width: 200px; /* Adjust width if needed */
+  }
+  
+  .nav-item {
+    margin-right: 20px;
+  }
+  
+  .navbar-brand {
+    font-weight: bold;
+  }
+  
+  .navbar-nav .nav-link {
+    color: #000 !important;
+  }
+  
+  /* components/Navbar.css */
+.navbar {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .category-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+  }
+  
+  .category-item {
+    position: relative;
+    margin-right: 20px;
+  }
+  
+  .category-item button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  .subcategory-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: #fff;
+    border: 1px solid #ddd;
+    z-index: 1000;
+  }
+  
+  .subcategory-dropdown li {
+    padding: 10px;
+  }
+  
+  .subcategory-dropdown li a {
+    text-decoration: none;
+    color: #000;
+  }
+  
+  .category-item:hover .subcategory-dropdown {
+    display: block;
+  }
+  
+  .category-posts {
+    margin-top: 20px;
+  }
+  
+  .category-posts ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  

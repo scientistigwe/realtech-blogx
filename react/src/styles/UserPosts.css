@@ -1,0 +1,15 @@
+/* src/styles/UserPosts.css */
+.user-posts .post-item {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+  }
+  
+  .user-posts .post-item h3 {
+    margin-bottom: 5px;
+  }
+  
+  .user-posts .post-item p {
+    margin: 2px 0;
+  }
+  
