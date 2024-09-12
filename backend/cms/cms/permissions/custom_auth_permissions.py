@@ -1,28 +1,28 @@
 import re
 import time
+from django.utils.functional import SimpleLazyObject
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
+
 
 class CustomAuthPermission(BasePermission):
-    authenticated_routes = [
-        r"^auth/users/me/?$",
-        r"^auth/users/me/update/?$",
-        r"^auth/users/me/partial_update/?$",
-        r"^auth/users/me/delete/?$",
-        r"^auth/users/\d+/?$",
-        r"^auth/users/\d+/update/?$",
-        r"^auth/users/\d+/partial_update/?$",
-        r"^auth/users/\d+/delete/?$",
-        r"^auth/users/\d+/contact/?$",
-        r"^posts/upvote/?$",
-        r"^posts/downvote/?$",
-        r"^comments/upvote/?$",
-        r"^comments/downvote/?$",
-        r"^comments/moderate/?$",
-    ]
+    authenticated_routes = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.csrf_cookie_name = 'csrftoken'
+        self.csrf_token = SimpleLazyObject(lambda: self._get_csrf_token())
+
+    def _get_csrf_token(self):
+        csrf_cookie = self.request.META.get('CSRF_COOKIE')
+        if csrf_cookie:
+            return csrf_cookie.split('=')[1]
+        return None
 
     def has_permission(self, request, view):
+        from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+        
         if any(re.match(route, request.path_info) for route in self.authenticated_routes):
             if not self.is_authenticated(request):
                 raise PermissionDenied(detail="User is not authenticated")
@@ -36,7 +36,6 @@ class CustomAuthPermission(BasePermission):
         return True
 
     def is_authenticated(self, request):
-        from rest_framework_simplejwt.tokens import RefreshToken
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         if not auth_header.startswith('JWT '):
             return False
@@ -48,7 +47,6 @@ class CustomAuthPermission(BasePermission):
             return False
 
     def is_token_valid(self, request):
-        from rest_framework_simplejwt.tokens import RefreshToken
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         if not auth_header.startswith('JWT '):
             return False
@@ -61,8 +59,7 @@ class CustomAuthPermission(BasePermission):
 
     def refresh_token(self, request):
         from rest_framework_simplejwt.views import TokenRefreshView
-        from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-        from rest_framework.status import HTTP_401_UNAUTHORIZED
+        from rest_framework import status
 
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         if not auth_header.startswith('JWT '):
@@ -73,7 +70,7 @@ class CustomAuthPermission(BasePermission):
         request._request.data = {'refresh': token}
         refresh_response = refresh_view(request._request)
         
-        if refresh_response.status_code == HTTP_401_UNAUTHORIZED:
+        if refresh_response.status_code == status.HTTP_401_UNAUTHORIZED:
             raise PermissionDenied(detail="Token refresh failed")
 
         new_token = refresh_response.data['access']

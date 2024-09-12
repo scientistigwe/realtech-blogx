@@ -71,13 +71,10 @@ export const authService = {
     try {
       const response = await apiCheckAuth();
       console.log("Authentication check result:", response.data);
-      return response.data.is_authenticated;
+      return response.data;
     } catch (error) {
-      console.error(
-        "Error checking authentication:",
-        error.response ? error.response.data : error.message
-      );
-      return false;
+      console.error("Authentication check failed:", error);
+      return { isAuthenticated: false };
     }
   },
 

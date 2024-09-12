@@ -14,7 +14,7 @@ import {
 import HeroCarousel from "../components/common/HeroCarousel";
 import { postService } from "../services/postsService";
 import { tagService } from "../services/tagsService";
-import "./../styles/HomePage.css"; // Import custom CSS for additional styling
+import "./../styles/HomePage.css";
 
 const HomePage = () => {
   const [featuredPosts, setFeaturedPosts] = useState([]);

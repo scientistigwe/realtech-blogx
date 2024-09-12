@@ -40,6 +40,7 @@ export const postService = {
   async fetchPosts() {
     try {
       const response = await apiListPosts();
+      console.log(`Fetched posts: ${response.data}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching posts:", error);
@@ -63,6 +64,7 @@ export const postService = {
   async fetchPostsByCategory(category) {
     try {
       const response = await apiGetPostsByCategory(category);
+      console.log(`Fetched posts by category: ${response.data}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching posts by category:", error);
@@ -96,6 +98,7 @@ export const postService = {
   async fetchFeaturedPosts() {
     try {
       const response = await apiGetFeaturedPosts();
+      console.log(`Fetched Featured Posts: ${response.data}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching featured posts:", error);
@@ -107,6 +110,7 @@ export const postService = {
   async fetchMostViewedPosts() {
     try {
       const response = await apiGetMostViewedPosts();
+      console.log(`Fetched Most Viewed Posts: ${response.data}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching most viewed posts:", error);

@@ -23,15 +23,17 @@ const PostList = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
+        console.log("Fetching posts...");
         const data = await postService.fetchPosts();
+        console.log("Received data:", data);
         setPosts(data);
       } catch (err) {
+        console.error("Error fetching posts:", err);
         setError("Failed to load posts.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchPosts();
   }, []);
 

@@ -1,8 +1,8 @@
 import axios from "axios";
 import { apiEndpoints } from "./apiEndpoints";
 import { checkAuth } from "./api";
-
-const BASE_URL = "http://localhost:8000/cms-api/v1/";
+console.log("API Client Loading...");
+const BASE_URL = "http://localhost:8000/";
 
 const createApiClient = () => {
   const client = axios.create({
@@ -12,20 +12,20 @@ const createApiClient = () => {
   });
 
   const authenticatedRoutes = [
-    "auth/users/me/",
-    "auth/users/me/update/",
-    "auth/users/me/partial_update/",
-    "auth/users/me/delete/",
-    "auth/users/{id}/",
-    "auth/users/{id}/update/",
-    "auth/users/{id}/partial_update/",
-    "auth/users/{id}/delete/",
-    "auth/users/{id}/contact/",
-    "posts/upvote/",
-    "posts/downvote/",
-    "comments/upvote/",
-    "comments/downvote/",
-    "comments/moderate/",
+    // "auth/users/me/",
+    // "auth/users/me/update/",
+    // "auth/users/me/partial_update/",
+    // "auth/users/me/delete/",
+    // "auth/users/{id}/",
+    // "auth/users/{id}/update/",
+    // "auth/users/{id}/partial_update/",
+    // "auth/users/{id}/delete/",
+    // "auth/users/{id}/contact/",
+    // "posts/upvote/",
+    // "posts/downvote/",
+    // "comments/upvote/",
+    // "comments/downvote/",
+    // "comments/moderate/",
   ];
 
   client.interceptors.request.use(
@@ -50,8 +50,8 @@ const createApiClient = () => {
         } catch (error) {
           console.error("Authentication failed:", error);
           // Redirect to login page
-          if (window.location.pathname !== "/auth/login") {
-            window.location.href = "/auth/login";
+          if (window.location.pathname !== "/login") {
+            window.location.href = "/login";
           }
           return Promise.reject(error);
         }

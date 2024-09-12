@@ -94,7 +94,7 @@ function App() {
           />
           <Route path="/authors" element={<AuthorList />} />
           <Route path="/authors/:authorId" element={<AuthorDetail />} />
-          <Route path="/search" element={<SearchPosts />} />
+          {/* <Route path="/search" element={<SearchPosts />} /> */}
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
@@ -119,17 +119,17 @@ function App() {
               element={<NotificationUpdate />}
             />
             <Route path="/contact-author" element={<ContactAuthor />} />
-            <Route path="/analytics" element={<AnalyticsDashboard />} />
-            <Route path="/moderation" element={<ModerationDashboard />} />
-            <Route path="/recommendations" element={<RecommendationsList />} />
-            <Route
+            {/* <Route path="/analytics" element={<AnalyticsDashboard />} /> */}
+            {/* <Route path="/moderation" element={<ModerationDashboard />} /> */}
+            {/* <Route path="/recommendations" element={<RecommendationsList />} /> */}
+            {/* <Route
               path="/recommendations/create"
               element={<RecommendationForm />}
-            />
-            <Route
+            /> */}
+            {/* <Route
               path="/recommendations/realtime"
               element={<RealTimeRecommendations />}
-            />
+            /> */}
           </Route>
 
           {/* Catch-all Route */}
