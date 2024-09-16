@@ -1,11 +1,14 @@
-// components/PostAnalytics.js
 import React from "react";
 import { Row, Col, Card } from "react-bootstrap";
 import { Bar } from "react-chartjs-2";
+import { usePostAnalytics } from "../../hooks/useAnalytics"; // Adjust the path as necessary
 import "../../styles/Analytics.css"; // Create or update styles as necessary
 
-const PostAnalytics = ({ analyticsData }) => {
-  if (!analyticsData) return <p>Loading analytics data...</p>;
+const PostAnalytics = () => {
+  const { analyticsData, loading, error } = usePostAnalytics();
+
+  if (loading) return <p>Loading analytics data...</p>;
+  if (error) return <p>Error loading analytics data: {error.message}</p>;
 
   // Prepare data for charts (example for a bar chart)
   const chartData = {

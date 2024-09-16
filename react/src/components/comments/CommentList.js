@@ -1,4 +1,3 @@
-// components/comments/CommentList.js
 import React, { useEffect, useState } from "react";
 import {
   Container,
@@ -10,7 +9,7 @@ import {
   Spinner,
   Alert,
 } from "react-bootstrap";
-import { commentService } from "../../services/commentsService";
+import { useComments } from "../../hooks/useComments";
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
 import "../../styles/Global.css";
@@ -18,23 +17,20 @@ import "../../styles/Components.css";
 
 const CommentList = () => {
   const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { fetchComments, loading, error } = useComments();
 
   useEffect(() => {
-    const fetchComments = async () => {
+    const loadComments = async () => {
       try {
-        const data = await commentService.fetchComments();
+        const data = await fetchComments();
         setComments(data);
       } catch (err) {
-        setError("Failed to load comments.");
-      } finally {
-        setLoading(false);
+        // error is handled by the hook
       }
     };
 
-    fetchComments();
-  }, []);
+    loadComments();
+  }, [fetchComments]);
 
   return (
     <Container className="mt-5">
@@ -46,16 +42,20 @@ const CommentList = () => {
       <Row className="justify-content-center">
         <Col md={8}>
           <h2 className="text-center mb-4">Comments</h2>
-          {error && <Alert variant="danger">{error}</Alert>}
+          {error && <Alert variant="danger">{error.message}</Alert>}
           {loading ? (
             <Spinner animation="border" />
           ) : (
             <ListGroup>
-              {comments.map((comment) => (
-                <ListGroup.Item key={comment.id}>
-                  <strong>{comment.author}</strong>: {comment.content}
-                </ListGroup.Item>
-              ))}
+              {comments.length > 0 ? (
+                comments.map((comment) => (
+                  <ListGroup.Item key={comment.id}>
+                    <strong>{comment.author}</strong>: {comment.content}
+                  </ListGroup.Item>
+                ))
+              ) : (
+                <Alert variant="info">No comments found.</Alert>
+              )}
             </ListGroup>
           )}
         </Col>

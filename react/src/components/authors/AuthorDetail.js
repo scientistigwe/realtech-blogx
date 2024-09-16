@@ -1,5 +1,4 @@
-// components/authors/AuthorDetail.js
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Container,
   Row,
@@ -10,7 +9,7 @@ import {
   Button,
 } from "react-bootstrap";
 import { useParams } from "react-router-dom";
-import { authorService } from "../../services/authorService";
+import { useGetAuthorById } from "../../hooks/useAuthors";
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
 import "../../styles/Global.css";
@@ -18,24 +17,7 @@ import "../../styles/Components.css";
 
 const AuthorDetail = () => {
   const { id } = useParams();
-  const [author, setAuthor] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchAuthor = async () => {
-      try {
-        const data = await authorService.readAuthor(id);
-        setAuthor(data);
-      } catch (err) {
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAuthor();
-  }, [id]);
+  const { author, loading, error } = useGetAuthorById(id);
 
   if (loading) return <p>Loading author details...</p>;
   if (error)

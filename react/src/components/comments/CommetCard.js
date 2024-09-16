@@ -1,50 +1,47 @@
-// components/comments/CommentCard.js
 import React, { useState } from "react";
 import { Card, Button, Badge, Alert, Spinner } from "react-bootstrap";
-import { commentService } from "../../services/commentService";
-import "../../styles/Layout.css";
-import "../../styles/Pages.css";
-import "../../styles/Global.css";
-import "../../styles/Components.css";
+import { useComments } from "../../hooks/useComments";
 
 const CommentCard = ({ comment }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const { upvoteComment, downvoteComment, moderateComment, loading } =
+    useComments();
+  const [localLoading, setLocalLoading] = useState(false);
+  const [localError, setLocalError] = useState(null);
+  const [localSuccess, setLocalSuccess] = useState(null);
 
   const handleUpvote = async () => {
-    setLoading(true);
+    setLocalLoading(true);
     try {
-      await commentService.upvoteComment(comment.id);
-      setSuccess("Comment upvoted successfully!");
+      await upvoteComment(comment.id);
+      setLocalSuccess("Comment upvoted successfully!");
     } catch (err) {
-      setError("Failed to upvote comment.");
+      setLocalError("Failed to upvote comment.");
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
   };
 
   const handleDownvote = async () => {
-    setLoading(true);
+    setLocalLoading(true);
     try {
-      await commentService.downvoteComment(comment.id);
-      setSuccess("Comment downvoted successfully!");
+      await downvoteComment(comment.id);
+      setLocalSuccess("Comment downvoted successfully!");
     } catch (err) {
-      setError("Failed to downvote comment.");
+      setLocalError("Failed to downvote comment.");
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
   };
 
   const handleModerate = async () => {
-    setLoading(true);
+    setLocalLoading(true);
     try {
-      await commentService.moderateComment(comment.id);
-      setSuccess("Comment moderated successfully!");
+      await moderateComment(comment.id);
+      setLocalSuccess("Comment moderated successfully!");
     } catch (err) {
-      setError("Failed to moderate comment.");
+      setLocalError("Failed to moderate comment.");
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
   };
 
@@ -56,28 +53,28 @@ const CommentCard = ({ comment }) => {
           <Badge bg="secondary">{comment.date}</Badge>
         </Card.Title>
         <Card.Text>{comment.content}</Card.Text>
-        {error && <Alert variant="danger">{error}</Alert>}
-        {success && <Alert variant="success">{success}</Alert>}
-        {loading && <Spinner animation="border" />}
+        {localError && <Alert variant="danger">{localError}</Alert>}
+        {localSuccess && <Alert variant="success">{localSuccess}</Alert>}
+        {localLoading || loading ? <Spinner animation="border" /> : null}
         <div className="d-flex justify-content-between mt-3">
           <Button
             variant="outline-success"
             onClick={handleUpvote}
-            disabled={loading}
+            disabled={localLoading || loading}
           >
             Upvote
           </Button>
           <Button
             variant="outline-danger"
             onClick={handleDownvote}
-            disabled={loading}
+            disabled={localLoading || loading}
           >
             Downvote
           </Button>
           <Button
             variant="outline-warning"
             onClick={handleModerate}
-            disabled={loading}
+            disabled={localLoading || loading}
           >
             Moderate
           </Button>

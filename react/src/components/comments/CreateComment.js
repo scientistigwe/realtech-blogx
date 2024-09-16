@@ -1,4 +1,3 @@
-// components/comments/CreateComment.js
 import React, { useState } from "react";
 import {
   Container,
@@ -9,30 +8,37 @@ import {
   Alert,
   Breadcrumb,
 } from "react-bootstrap";
-import { commentService } from "../../services/commentsService";
+import { useComments } from "../../hooks/useComments";
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
 import "../../styles/Global.css";
 import "../../styles/Components.css";
 
 const CreateComment = () => {
+  const {
+    createComment,
+    loading: hookLoading,
+    error: hookError,
+  } = useComments();
   const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setLocalLoading(true);
+    setError(null);
+    setSuccess(null);
 
     try {
-      await commentService.createComment({ content });
+      await createComment({ content });
       setSuccess("Comment created successfully!");
       setContent("");
     } catch (err) {
       setError("Failed to create comment.");
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
   };
 
@@ -63,10 +69,10 @@ const CreateComment = () => {
             <Button
               type="submit"
               variant="primary"
-              disabled={loading}
+              disabled={localLoading || hookLoading}
               className="w-100"
             >
-              {loading ? "Creating..." : "Create Comment"}
+              {localLoading || hookLoading ? "Creating..." : "Create Comment"}
             </Button>
           </Form>
         </Col>

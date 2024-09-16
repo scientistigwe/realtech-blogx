@@ -1,5 +1,4 @@
-// components/authors/AuthorList.js
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Container,
   Row,
@@ -9,31 +8,14 @@ import {
   Alert,
 } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { authorService } from "../../services/authorService";
+import { useListAuthors } from "../../hooks/useAuthors";
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
 import "../../styles/Global.css";
 import "../../styles/Components.css";
 
 const AuthorList = () => {
-  const [authors, setAuthors] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchAuthors = async () => {
-      try {
-        const data = await authorService.listAuthors();
-        setAuthors(data);
-      } catch (err) {
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAuthors();
-  }, []);
+  const { authors, loading, error } = useListAuthors();
 
   if (loading) return <p>Loading authors...</p>;
   if (error)

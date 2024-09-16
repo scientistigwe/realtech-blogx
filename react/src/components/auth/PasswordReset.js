@@ -10,7 +10,7 @@ import {
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { validateEmail } from "../../utils/validations";
-import { authService } from "../../services/authService";
+import { useAuth } from "../../hooks/useAuth"; // Import the custom hook
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
 import "../../styles/Global.css";
@@ -21,28 +21,26 @@ const PasswordReset = () => {
   const [email, setEmail] = useState("");
   const [formError, setFormError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { resetPassword, loading, error } = useAuth(); // Use the custom hook
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!validateEmail(email)) {
       setFormError("Invalid email format.");
       return;
     }
 
-    setLoading(true);
     try {
-      await authService.resetPassword(email);
+      await resetPassword({ email }); // Call the hook function
       setSuccessMessage("Password reset link has been sent to your email.");
       setFormError(null);
       // Redirect to login or another page
       navigate("/login");
     } catch (err) {
-      setFormError("Failed to send password reset link.");
+      setFormError(error || "Failed to send password reset link."); // Use the error from the hook
       setSuccessMessage("");
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 

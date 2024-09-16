@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Carousel, Spinner, Alert } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { postService } from "../../services/postsService"; // Adjust the path as necessary
+import { usePosts } from "../../hooks/usePosts"; // Adjust the path as necessary
 import "./../../styles/HeroCarousel.css"; // Add any custom styles here
 
 const HeroCarousel = () => {
+  const { fetchMostViewedPosts } = usePosts();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [carouselItems, setCarouselItems] = useState([]);
 
   useEffect(() => {
-    const fetchPosts = async () => {
+    const loadPosts = async () => {
       try {
-        const response = await postService.fetchMostViewedPosts();
+        const response = await fetchMostViewedPosts();
         setPosts(response || []); // Ensure response is always an array
         setLoading(false);
       } catch (fetchError) {
@@ -23,8 +24,8 @@ const HeroCarousel = () => {
       }
     };
 
-    fetchPosts();
-  }, []);
+    loadPosts();
+  }, [fetchMostViewedPosts]);
 
   useEffect(() => {
     // Create carouselItems based on posts data
@@ -46,7 +47,7 @@ const HeroCarousel = () => {
     return (
       <div className="text-center">
         <Spinner animation="border" role="status">
-          <span className="sr-only">Loading...</span>
+          <span className="sr-only"></span>
         </Spinner>
       </div>
     );

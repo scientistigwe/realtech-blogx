@@ -1,4 +1,3 @@
-// components/users/UserProfile.js
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -8,12 +7,21 @@ import {
   Breadcrumb,
   Alert,
 } from "react-bootstrap";
-import { usersService } from "../../services/usersService";
+import { useUsers } from "../../hooks/useUsers"; // Adjust the path as necessary
 import "../../styles/Users.css";
 
 const defaultAvatar = "path/to/default-avatar.png"; // Path to your default avatar image
 
 const UserProfile = () => {
+  const {
+    getCurrentUserProfile,
+    updateUser,
+    partialUpdateUser, // Now we will use this
+    deleteUser,
+    loading,
+    error: apiError,
+  } = useUsers();
+
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -25,30 +33,32 @@ const UserProfile = () => {
     website: "",
     location: "",
   });
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const data = await usersService.getCurrentUserProfile();
-        setUser(data);
-        setFormData({
-          username: data.username,
-          email: data.email,
-          first_name: data.first_name,
-          last_name: data.last_name,
-          bio: data.bio || "",
-          website: data.website || "",
-          location: data.location || "",
-        });
+        const data = await getCurrentUserProfile();
+        if (data) {
+          setUser(data);
+          setFormData({
+            username: data.username || "",
+            email: data.email || "",
+            first_name: data.first_name || "",
+            last_name: data.last_name || "",
+            bio: data.bio || "",
+            website: data.website || "",
+            location: data.location || "",
+          });
+        }
       } catch (error) {
         console.error("Failed to fetch user profile:", error);
-        setError("Failed to load profile.");
+        setFormError("Failed to load profile.");
       }
     };
 
     fetchUserProfile();
-  }, []);
+  }, [getCurrentUserProfile]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -57,12 +67,11 @@ const UserProfile = () => {
 
   const handleDelete = async () => {
     try {
-      await usersService.deleteUser(user.id);
-      // Optionally, redirect to another page or show a success message
+      await deleteUser(user.id);
       alert("Profile deleted successfully.");
     } catch (error) {
       console.error("Failed to delete user profile:", error);
-      setError("Failed to delete profile.");
+      setFormError("Failed to delete profile.");
     }
   };
 
@@ -70,13 +79,26 @@ const UserProfile = () => {
     e.preventDefault();
     try {
       if (isEditing) {
-        await usersService.updateUser(user.id, formData);
+        await updateUser(user.id, formData);
         setUser({ ...user, ...formData });
         setIsEditing(false);
       }
     } catch (error) {
       console.error("Failed to update user profile:", error);
-      setError("Failed to update profile.");
+      setFormError("Failed to update profile.");
+    }
+  };
+
+  // New function for partial update of the bio field
+  const handlePartialUpdate = async () => {
+    try {
+      const partialData = { bio: formData.bio }; // Only update the bio
+      await partialUpdateUser(user.id, partialData);
+      setUser({ ...user, bio: formData.bio });
+      alert("Bio updated successfully.");
+    } catch (error) {
+      console.error("Failed to partially update user profile:", error);
+      setFormError("Failed to update bio.");
     }
   };
 
@@ -86,7 +108,9 @@ const UserProfile = () => {
         <Breadcrumb.Item href="/">Home</Breadcrumb.Item>
         <Breadcrumb.Item active>User Profile</Breadcrumb.Item>
       </Breadcrumb>
-      {error && <Alert variant="danger">{error}</Alert>}
+      {formError && <Alert variant="danger">{formError}</Alert>}
+      {apiError && <Alert variant="danger">{apiError}</Alert>}
+      {loading && <Alert variant="info">Loading...</Alert>}
       {user && (
         <>
           <h1>User Profile</h1>
@@ -168,46 +192,6 @@ const UserProfile = () => {
                 onChange={handleInputChange}
               />
             </Form.Group>
-            <Form.Group controlId="social_profiles">
-              <Form.Label>Social Profiles</Form.Label>
-              <Form.Control
-                type="text"
-                name="social_profiles"
-                value={
-                  user.social_profiles
-                    ? JSON.stringify(user.social_profiles)
-                    : ""
-                }
-                readOnly
-              />
-            </Form.Group>
-            <Form.Group controlId="last_active">
-              <Form.Label>Last Active</Form.Label>
-              <Form.Control
-                type="text"
-                name="last_active"
-                value={user.last_active}
-                readOnly
-              />
-            </Form.Group>
-            <Form.Group controlId="is_author">
-              <Form.Label>Is Author</Form.Label>
-              <Form.Control
-                type="text"
-                name="is_author"
-                value={user.is_author ? "Yes" : "No"}
-                readOnly
-              />
-            </Form.Group>
-            <Form.Group controlId="role">
-              <Form.Label>Role</Form.Label>
-              <Form.Control
-                type="text"
-                name="role"
-                value={user.role}
-                readOnly
-              />
-            </Form.Group>
             <Button variant="primary" type="submit">
               {isEditing ? "Save Changes" : "Edit Profile"}
             </Button>
@@ -223,6 +207,15 @@ const UserProfile = () => {
             {isEditing && (
               <Button variant="danger" onClick={handleDelete} className="ms-2">
                 Delete Profile
+              </Button>
+            )}
+            {isEditing && (
+              <Button
+                variant="warning"
+                onClick={handlePartialUpdate}
+                className="ms-2"
+              >
+                Update Bio Only
               </Button>
             )}
           </Form>

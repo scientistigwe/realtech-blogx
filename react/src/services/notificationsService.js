@@ -10,15 +10,19 @@ import {
   deleteNotification as apiDeleteNotification,
 } from "../utils/api"; // Adjust the path as necessary
 
+const handleApiError = (error, message) => {
+  console.error(message, error.response?.data || error.message);
+  throw error;
+};
+
 export const notificationService = {
   // Fetch all notifications
   async fetchNotifications() {
     try {
       const response = await apiListNotifications();
-      return response.data; // Assuming the response contains the list of notifications
+      return response.data;
     } catch (error) {
-      console.error("Error fetching notifications:", error);
-      throw error;
+      handleApiError(error, "Error fetching notifications:");
     }
   },
 
@@ -26,10 +30,9 @@ export const notificationService = {
   async createNotification(data) {
     try {
       const response = await apiCreateNotification(data);
-      return response.data; // Assuming the response contains the created notification data
+      return response.data;
     } catch (error) {
-      console.error("Error creating notification:", error);
-      throw error;
+      handleApiError(error, "Error creating notification:");
     }
   },
 
@@ -38,20 +41,19 @@ export const notificationService = {
     try {
       await apiMarkAllAsRead();
     } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-      throw error;
+      handleApiError(error, "Error marking all notifications as read:");
     }
   },
 
-  // Mark all notifications as read
+  // Mark a notification as read
   async markNotificationAsRead(id) {
     try {
       await apiMarkNotificationAsRead(id);
     } catch (error) {
-      console.error(
-        `Error marking notification with id: ${id} as read: ${error}`
+      handleApiError(
+        error,
+        `Error marking notification with id: ${id} as read:`
       );
-      throw error;
     }
   },
 
@@ -59,10 +61,9 @@ export const notificationService = {
   async getNotificationById(id) {
     try {
       const response = await apiGetNotificationById(id);
-      return response.data; // Assuming the response contains the notification data
+      return response.data;
     } catch (error) {
-      console.error("Error fetching notification by ID:", error);
-      throw error;
+      handleApiError(error, `Error fetching notification by ID ${id}:`);
     }
   },
 
@@ -70,10 +71,9 @@ export const notificationService = {
   async updateNotification(id, data) {
     try {
       const response = await apiUpdateNotification(id, data);
-      return response.data; // Assuming the response contains the updated notification data
+      return response.data;
     } catch (error) {
-      console.error("Error updating notification by ID:", error);
-      throw error;
+      handleApiError(error, `Error updating notification by ID ${id}:`);
     }
   },
 
@@ -81,10 +81,12 @@ export const notificationService = {
   async partialUpdateNotification(id, data) {
     try {
       const response = await apiPartialUpdateNotification(id, data);
-      return response.data; // Assuming the response contains the partially updated notification data
+      return response.data;
     } catch (error) {
-      console.error("Error partially updating notification by ID:", error);
-      throw error;
+      handleApiError(
+        error,
+        `Error partially updating notification by ID ${id}:`
+      );
     }
   },
 
@@ -93,8 +95,7 @@ export const notificationService = {
     try {
       await apiDeleteNotification(id);
     } catch (error) {
-      console.error("Error deleting notification by ID:", error);
-      throw error;
+      handleApiError(error, `Error deleting notification by ID ${id}:`);
     }
   },
 };

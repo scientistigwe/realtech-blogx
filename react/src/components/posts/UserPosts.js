@@ -1,5 +1,4 @@
-// components/posts/UserPosts.js
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Container,
   Row,
@@ -8,36 +7,15 @@ import {
   Spinner,
   Breadcrumb,
 } from "react-bootstrap";
-import { postService } from "../../services/postsService";
 import PostCard from "./PostCard"; // Import the PostCard component
+import { usePosts } from "../../hooks/usePosts"; // Import the custom hook
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
 import "../../styles/Global.css";
 import "../../styles/Components.css";
 
 const UserPosts = ({ userId }) => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchUserPosts = async () => {
-      try {
-        const allPosts = await postService.fetchPosts();
-        const userPosts = userId
-          ? allPosts.filter((post) => post.user.id === userId)
-          : [];
-
-        setPosts(userPosts);
-      } catch (err) {
-        setError("Failed to load user posts.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserPosts();
-  }, [userId]);
+  const { posts, loading, error } = usePosts.fetchUserPosts(userId);
 
   return (
     <Container className="mt-5">

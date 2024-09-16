@@ -1,16 +1,6 @@
 import { apiEndpoints } from "./apiEndpoints"; // Adjust the import path as necessary
-import apiClient from "./apiClient"; // Adjust the import path as necessary
+import { apiRequest } from "./apiRequest"; // Adjust the import path as necessary
 
-// Helper function to make API requests
-const apiRequest = async (method, url, data = null) => {
-  try {
-    const response = await apiClient({ method, url, data });
-    return response.data;
-  } catch (error) {
-    console.error(`Error with ${method} request to ${url}:`, error);
-    throw error;
-  }
-};
 // Check Auth API function
 export const checkAuth = () => apiRequest("GET", apiEndpoints.api.checkAuth);
 

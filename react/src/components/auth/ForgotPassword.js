@@ -8,7 +8,7 @@ import {
   Alert,
   Breadcrumb,
 } from "react-bootstrap";
-import { authService } from "../../services/authService";
+import { useAuth } from "../../hooks/useAuth";
 import { validateEmail } from "../../utils/validations";
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
@@ -19,26 +19,26 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [formError, setFormError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { resetPassword, loading, error } = useAuth(); // Use the hook here
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!validateEmail(email)) {
       setFormError("Invalid email format.");
       return;
     }
 
-    setLoading(true);
     setFormError(null);
 
     try {
-      await authService.resetPassword({ email });
+      await resetPassword({ email });
       setSuccessMessage("Password reset link has been sent to your email.");
     } catch (err) {
-      setFormError("Failed to send password reset link.");
+      setFormError(
+        error || "Failed to send password reset link. Please try again."
+      );
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 

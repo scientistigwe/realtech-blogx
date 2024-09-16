@@ -1,22 +1,11 @@
-// components/PostSlugCheck.js
-import React, { useState } from "react";
+import React from "react";
 import { Container, Form, Button, Alert, Breadcrumb } from "react-bootstrap";
-import { postService } from "../../services/postsService";
+import { usePosts } from "../../hooks/usePosts";
 import "../../styles/Components.css";
 
 const PostSlugCheck = () => {
-  const [slug, setSlug] = useState("");
-  const [available, setAvailable] = useState(null);
-  const [error, setError] = useState(null);
-
-  const checkSlug = async () => {
-    try {
-      const response = await postService.checkPostSlug(slug);
-      setAvailable(response.available);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+  const { slug, setSlug, available, error, loading, checkSlug } =
+    usePosts.checkPostSlug();
 
   return (
     <Container className="mt-5">
@@ -35,8 +24,13 @@ const PostSlugCheck = () => {
             onChange={(e) => setSlug(e.target.value)}
           />
         </Form.Group>
-        <Button variant="primary" onClick={checkSlug} className="mt-3">
-          Check Slug
+        <Button
+          variant="primary"
+          onClick={checkSlug}
+          className="mt-3"
+          disabled={loading}
+        >
+          {loading ? "Checking..." : "Check Slug"}
         </Button>
       </Form>
       {error && (

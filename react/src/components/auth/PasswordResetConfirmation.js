@@ -29,12 +29,16 @@ const PasswordResetConfirm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate new password
     if (!validatePassword(newPassword)) {
       setError(
         "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character."
       );
       return;
     }
+
+    // Validate password confirmation
     if (!validatePasswordConfirmation(newPassword, reNewPassword)) {
       setError("Passwords do not match.");
       return;
@@ -48,9 +52,11 @@ const PasswordResetConfirm = () => {
         token,
       });
       setSuccessMessage("Password has been successfully reset.");
+      setError(null); // Clear any previous errors
       setTimeout(() => navigate("/login"), 3000); // Redirect after 3 seconds
     } catch (error) {
       setError("Failed to reset password.");
+      setSuccessMessage(""); // Clear any previous success messages
     }
   };
 

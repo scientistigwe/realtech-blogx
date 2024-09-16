@@ -12,11 +12,24 @@ import {
   Col,
 } from "react-bootstrap";
 import HeroCarousel from "../components/common/HeroCarousel";
-import { postService } from "../services/postsService";
-import { tagService } from "../services/tagsService";
+import { usePosts } from "../hooks/usePosts";
+import { useTags } from "../hooks/useTags";
 import "./../styles/HomePage.css";
 
+// Define mediaBaseUrl and default image
+const mediaBaseUrl =
+  process.env.REACT_APP_MEDIA_BASE_URL || "http://localhost:8000/media/";
+const defaultImageUrl = `${mediaBaseUrl}posts/default-image.png`;
+
 const HomePage = () => {
+  const {
+    fetchFeaturedPosts,
+    fetchMostViewedPosts,
+    loading: postsLoading,
+    error: postsError,
+  } = usePosts();
+  const { listTags, loading: tagsLoading, error: tagsError } = useTags();
+
   const [featuredPosts, setFeaturedPosts] = useState([]);
   const [mostViewedPosts, setMostViewedPosts] = useState([]);
   const [tags, setTags] = useState([]);
@@ -25,45 +38,61 @@ const HomePage = () => {
   const [error, setError] = useState(null);
   const [showMoreTags, setShowMoreTags] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [featuredResponse, mostViewedResponse, tagsResponse] =
-        await Promise.all([
-          postService.fetchFeaturedPosts(),
-          postService.fetchMostViewedPosts(),
-          tagService.listTags(),
-        ]);
-
-      // Ensure that responses are arrays before slicing
-      const featured = Array.isArray(featuredResponse) ? featuredResponse : [];
-      const mostViewed = Array.isArray(mostViewedResponse)
-        ? mostViewedResponse
-        : [];
-      const tagsData = Array.isArray(tagsResponse) ? tagsResponse : [];
-
-      console.log("Featured Posts:", featured);
-      console.log("Most Viewed Posts:", mostViewed);
-      console.log("Tags:", tagsData);
-
-      setFeaturedPosts(featured.slice(0, 1)); // Display only the first featured post
-      setMostViewedPosts(mostViewed.slice(0, 10)); // Display up to 10 most viewed posts
-      setTags(tagsData.slice(0, 10)); // Display top 10 tags
-
-      // Store all tags for modal view
-      setAllTags(tagsData);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setError(error);
-    } finally {
-      setLoading(false);
+  const getImageUrl = (post) => {
+    if (post.thumbnail) {
+      // The thumbnail is already a complete URL, so return it as is
+      return post.thumbnail;
+    } else if (post.image_url) {
+      // If image_url is provided, use it (it should already be a complete URL)
+      return post.image_url;
+    } else {
+      // Use default image if no valid image information is available
+      return defaultImageUrl;
     }
   };
 
   useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [featuredResponse, mostViewedResponse, tagsResponse] =
+          await Promise.all([
+            fetchFeaturedPosts(),
+            fetchMostViewedPosts(),
+            listTags(),
+          ]);
+
+        console.log(
+          "Featured Posts Response:",
+          JSON.stringify(featuredResponse, null, 2)
+        );
+        console.log(
+          "Most Viewed Posts Response:",
+          JSON.stringify(mostViewedResponse, null, 2)
+        );
+
+        const processedFeaturedPosts = Array.isArray(featuredResponse)
+          ? featuredResponse.slice(0, 2)
+          : [];
+        const processedMostViewedPosts = Array.isArray(mostViewedResponse)
+          ? mostViewedResponse.slice(0, 10)
+          : [];
+
+        setFeaturedPosts(processedFeaturedPosts);
+        setMostViewedPosts(processedMostViewedPosts);
+        setTags(tagsResponse.results.slice(0, 12) || []);
+        setAllTags(tagsResponse.results || []);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
-  }, []);
+  }, [fetchFeaturedPosts, fetchMostViewedPosts, listTags]);
 
   const handleLoadMoreTags = () => {
     setShowMoreTags(true);
@@ -83,20 +112,20 @@ const HomePage = () => {
     return "An unknown error occurred";
   };
 
-  if (loading) {
+  if (loading || postsLoading || tagsLoading) {
     return (
       <div className="text-center">
         <Spinner animation="border" role="status">
-          <span className="sr-only">Loading...</span>
+          <span className="sr-only"></span>
         </Spinner>
       </div>
     );
   }
 
-  if (error) {
+  if (error || postsError || tagsError) {
     return (
       <Alert variant="danger" className="text-center">
-        {renderError(error)}
+        {renderError(error || postsError || tagsError)}
       </Alert>
     );
   }
@@ -115,7 +144,11 @@ const HomePage = () => {
           {featuredPosts.map((post) => (
             <Col md={12} lg={6} key={post.id} className="mb-4">
               <Card>
-                <Card.Img variant="top" src={post.imageUrl} alt={post.title} />
+                <Card.Img
+                  variant="top"
+                  src={getImageUrl(post)}
+                  alt={post.title}
+                />
                 <Card.Body>
                   <Card.Title>{post.title}</Card.Title>
                   <Card.Text>{post.excerpt}</Card.Text>
@@ -135,7 +168,11 @@ const HomePage = () => {
           {mostViewedPosts.map((post) => (
             <Col md={6} lg={4} key={post.id} className="mb-4">
               <Card>
-                <Card.Img variant="top" src={post.imageUrl} alt={post.title} />
+                <Card.Img
+                  variant="top"
+                  src={getImageUrl(post)}
+                  alt={post.title}
+                />
                 <Card.Body>
                   <Card.Title>{post.title}</Card.Title>
                   <Card.Text>{post.excerpt}</Card.Text>
@@ -168,7 +205,7 @@ const HomePage = () => {
             </Col>
           ))}
         </Row>
-        {tags.length > 10 && !showMoreTags && (
+        {allTags.length > 12 && !showMoreTags && (
           <Button variant="link" onClick={handleLoadMoreTags}>
             Load More Tags
           </Button>

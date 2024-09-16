@@ -1,4 +1,3 @@
-// components/authors/ContactAuthor.js
 import React, { useState } from "react";
 import {
   Container,
@@ -10,7 +9,7 @@ import {
   Breadcrumb,
 } from "react-bootstrap";
 import { useParams } from "react-router-dom";
-import { authorService } from "../../services/authorService";
+import { useContactAuthor } from "../../hooks/useAuthors";
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
 import "../../styles/Global.css";
@@ -22,27 +21,22 @@ const ContactAuthor = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+
+  const { contactAuthor, response, loading, error } = useContactAuthor();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
     const contactData = { title, name, email, message };
 
     try {
-      await authorService.contactAuthor(id, contactData);
-      setSuccess("Your message has been sent successfully!");
+      await contactAuthor(id, contactData);
       setTitle("");
       setName("");
       setEmail("");
       setMessage("");
     } catch (err) {
-      setError("Failed to send message. Please try again.");
-    } finally {
-      setLoading(false);
+      // error is handled by the hook
     }
   };
 
@@ -57,8 +51,12 @@ const ContactAuthor = () => {
       <Row className="justify-content-center">
         <Col md={8} lg={6}>
           <h2 className="text-center mb-4">Contact Author</h2>
-          {error && <Alert variant="danger">{error}</Alert>}
-          {success && <Alert variant="success">{success}</Alert>}
+          {error && <Alert variant="danger">{error.message}</Alert>}
+          {response && (
+            <Alert variant="success">
+              Your message has been sent successfully!
+            </Alert>
+          )}
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Title</Form.Label>

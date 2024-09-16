@@ -9,7 +9,7 @@ import {
   Breadcrumb,
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { authService } from "../../services/authService";
+import { useAuth } from "../../hooks/useAuth";
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
 import "../../styles/Global.css";
@@ -17,32 +17,42 @@ import "../../styles/Components.css";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const { createJwt, loading, error } = useAuth(); // Ensure useAuth provides createJwt
+  const [formData, setFormData] = useState({ username: "", password: "" });
   const [formError, setFormError] = useState(null);
-  const [loading, setLoading] = useState(false);
+
+  // Handle change for form fields
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value, // Dynamically update the appropriate field
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError(null); // Reset error state
+    setFormError(null);
 
+    const { username, password } = formData;
+
+    // Basic validation
     if (!username || !password) {
       setFormError("Username and password are required.");
       return;
     }
 
-    setLoading(true);
     try {
-      // Log in and get the user profile (which includes the user ID)
-      const userProfile = await authService.createJwt(username, password);
-
-      // Redirect to the profile page for the logged-in user
-      navigate(`/profile/${userProfile.id}`);
+      // Call `createJwt` with username and password as separate arguments
+      const result = await createJwt(username, password);
+      if (result.message === "Login successful") {
+        // Redirect to dashboard or home page
+        navigate(`/profile`);
+      } else {
+        setFormError("Login failed. Please try again.");
+      }
     } catch (error) {
-      setFormError("Invalid credentials. Please try again.");
-      console.error("Login error:", error);
-    } finally {
-      setLoading(false);
+      setFormError(error.message || "Invalid credentials. Please try again.");
     }
   };
 
@@ -56,26 +66,36 @@ const Login = () => {
       <Row className="justify-content-center">
         <Col md={6} lg={4}>
           <h2 className="text-center mb-4">Login</h2>
+
+          {/* Form errors or server errors */}
           {formError && <Alert variant="danger">{formError}</Alert>}
+          {error && !formError && (
+            <Alert variant="danger">An error occurred. Please try again.</Alert>
+          )}
+
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Username</Form.Label>
               <Form.Control
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                name="username"
+                value={formData.username} // Controlled input
+                onChange={handleChange} // Use handleChange function
                 required
               />
             </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Password</Form.Label>
               <Form.Control
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                name="password"
+                value={formData.password} // Controlled input
+                onChange={handleChange} // Use handleChange function
                 required
               />
             </Form.Group>
+
             <Button
               type="submit"
               variant="primary"

@@ -1,5 +1,4 @@
-// components/PostsByTag.js
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Container,
   Row,
@@ -9,29 +8,12 @@ import {
   ListGroup,
 } from "react-bootstrap";
 import { useParams } from "react-router-dom";
-import { postService } from "../../services/postsService";
+import { fetchPostsByTag } from "../../hooks/usePosts";
 import "../../styles/Components.css";
 
 const PostsByTag = () => {
   const { tag } = useParams();
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const data = await postService.fetchPostsByTag(tag);
-        setPosts(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPosts();
-  }, [tag]);
+  const { posts, error, loading } = fetchPostsByTag(tag);
 
   return (
     <Container className="mt-5">

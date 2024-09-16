@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { Spinner, Alert } from "react-bootstrap";
-import { authService } from "../../services/authService"; // Import authService
+import { useAuth } from "../../hooks/useAuth"; // Import the useAuth hook
 
 const ProtectedRoute = () => {
+  const { checkAuth } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const checkAuthentication = async () => {
+    const verifyAuthentication = async () => {
       try {
-        const isAuth = await authService.checkAuth();
+        const isAuth = await checkAuth(); // Use the hook's method
         setIsAuthenticated(isAuth);
       } catch (error) {
         console.error("Error checking authentication:", error);
@@ -21,14 +22,14 @@ const ProtectedRoute = () => {
       }
     };
 
-    checkAuthentication();
-  }, []);
+    verifyAuthentication();
+  }, [checkAuth]);
 
   if (loading) {
     return (
       <div className="text-center">
         <Spinner animation="border" role="status">
-          <span className="sr-only">Loading...</span>
+          <span className="sr-only"></span>
         </Spinner>
       </div>
     );

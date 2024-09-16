@@ -1,25 +1,31 @@
-// components/PostEngagement.js
 import React from "react";
 import { Button, Col, ListGroup } from "react-bootstrap";
-import { postService } from "../../services/postsService";
+import { usePosts } from "../../hooks/usePosts";
 import "../../styles/Components.css";
 
 const PostEngagement = ({ post }) => {
+  const { upvotePost, error: upvoteError, loading: upvoteLoading } = usePosts();
+  const {
+    downvotePost,
+    error: downvoteError,
+    loading: downvoteLoading,
+  } = usePosts();
+
   const handleUpvote = async () => {
     try {
-      await postService.upvotePost(post.id);
+      await upvotePost(post.id);
       // Optionally refetch or update the post data
     } catch (err) {
-      console.error("Error upvoting post:", err);
+      console.error("Error upvoting post:", upvoteError || err);
     }
   };
 
   const handleDownvote = async () => {
     try {
-      await postService.downvotePost(post.id);
+      await downvotePost(post.id);
       // Optionally refetch or update the post data
     } catch (err) {
-      console.error("Error downvoting post:", err);
+      console.error("Error downvoting post:", downvoteError || err);
     }
   };
 
@@ -29,13 +35,24 @@ const PostEngagement = ({ post }) => {
         <h5>{post.title}</h5>
         <p>{post.summary}</p>
         <div className="d-flex">
-          <Button onClick={handleUpvote} className="me-2">
-            Upvote
+          <Button
+            onClick={handleUpvote}
+            className="me-2"
+            disabled={upvoteLoading}
+          >
+            {upvoteLoading ? "Upvoting..." : "Upvote"}
           </Button>
-          <Button onClick={handleDownvote} className="me-2">
-            Downvote
+          <Button
+            onClick={handleDownvote}
+            className="me-2"
+            disabled={downvoteLoading}
+          >
+            {downvoteLoading ? "Downvoting..." : "Downvote"}
           </Button>
         </div>
+        {(upvoteError || downvoteError) && (
+          <div className="text-danger mt-2">{upvoteError || downvoteError}</div>
+        )}
       </ListGroup.Item>
     </Col>
   );

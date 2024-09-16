@@ -1,4 +1,3 @@
-// components/comments/UpdateComment.js
 import React, { useEffect, useState } from "react";
 import {
   Container,
@@ -11,7 +10,7 @@ import {
   Spinner,
 } from "react-bootstrap";
 import { useParams, useNavigate } from "react-router-dom";
-import { commentService } from "../../services/commentsService";
+import { useComments } from "../../hooks/useComments";
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
 import "../../styles/Global.css";
@@ -20,6 +19,14 @@ import "../../styles/Components.css";
 const UpdateComment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const {
+    getCommentById,
+    updateComment,
+    loading: fetchLoading,
+    error: fetchError,
+    success: fetchSuccess,
+  } = useComments();
+
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -29,7 +36,7 @@ const UpdateComment = () => {
   useEffect(() => {
     const fetchComment = async () => {
       try {
-        const data = await commentService.getCommentById(id);
+        const data = await getCommentById(id);
         setContent(data.content);
       } catch (err) {
         setError("Failed to fetch comment.");
@@ -39,14 +46,14 @@ const UpdateComment = () => {
     };
 
     fetchComment();
-  }, [id]);
+  }, [id, getCommentById]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setUpdateLoading(true);
 
     try {
-      await commentService.updateComment(id, { content });
+      await updateComment(id, { content });
       setSuccess("Comment updated successfully!");
       navigate("/comments");
     } catch (err) {
@@ -55,6 +62,11 @@ const UpdateComment = () => {
       setUpdateLoading(false);
     }
   };
+
+  useEffect(() => {
+    setError(fetchError);
+    setSuccess(fetchSuccess);
+  }, [fetchError, fetchSuccess]);
 
   return (
     <Container className="mt-5">

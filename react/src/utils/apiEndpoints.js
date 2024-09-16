@@ -1,13 +1,14 @@
 export const apiEndpoints = {
   api: {
     // GET /api/check-auth/
-    checkAuth: "cms-api/v1/api/check-auth/",
+    checkAuth: "auth/check-auth/",
   },
   auth: {
     // POST /auth/jwt/create/
-    jwtCreate: "auth/jwt/create/", // auth_jwt_create_create
+    jwtCreate: "auth/token/", // auth_jwt_create_create
     // POST /auth/jwt/refresh/
-    jwtRefresh: "auth/jwt/refresh/", // auth_jwt_refresh_create
+    // jwtRefresh: "auth/jwt/refresh/", // auth_jwt_refresh_create
+    jwtRefresh: "auth/token/refresh/", // auth_jwt_refresh_create
     // POST /auth/jwt/verify/
     jwtVerify: "auth/jwt/verify/", // auth_jwt_verify_create
 
@@ -102,35 +103,35 @@ export const apiEndpoints = {
   },
   posts: {
     // GET /posts/
-    list: "cms-api/v1/cms-api/v1/posts/", // posts_list
+    list: "cms-api/v1/posts/", // posts_list
     // POST /posts/
-    create: "cms-api/v1/cms-api/v1/posts/", // posts_create
+    create: "cms-api/v1/posts/", // posts_create
     // POST /posts/check_slug/
-    checkSlug: "cms-api/v1/cms-api/v1/posts/check_slug/", // posts_check_slug
+    checkSlug: "cms-api/v1/posts/check_slug/", // posts_check_slug
     // GET /posts/featured/
-    featured: "cms-api/v1/cms-api/v1/posts/featured/", // posts_featured
+    featured: "cms-api/v1/posts/featured/", // posts_featured
     // GET /posts/most-viewed/
-    mostViewed: "cms-api/v1/cms-api/v1/posts/most-viewed/", // posts_most_viewed
+    mostViewed: "cms-api/v1/posts/most-viewed/", // posts_most_viewed
     // GET /posts/{id}/
-    read: (id) => `cms-api/v1/cms-api/v1/posts/${id}/`, // posts_read
+    read: (id) => `cms-api/v1/posts/${id}/`, // posts_read
     // PUT /posts/{id}/
-    update: (id) => `cms-api/v1/cms-api/v1/posts/${id}/`, // posts_update
+    update: (id) => `cms-api/v1/posts/${id}/`, // posts_update
     // PATCH /posts/{id}/
-    partialUpdate: (id) => `cms-api/v1/cms-api/v1/posts/${id}/`, // posts_partial_update
+    partialUpdate: (id) => `cms-api/v1/posts/${id}/`, // posts_partial_update
     // DELETE /posts/{id}/
-    delete: (id) => `cms-api/v1/cms-api/v1/posts/${id}/`, // posts_delete
+    delete: (id) => `cms-api/v1/posts/${id}/`, // posts_delete
     // POST /posts/{id}/downvote/
-    downvote: (id) => `cms-api/v1/cms-api/v1/posts/${id}/downvote/`, // posts_downvote
+    downvote: (id) => `cms-api/v1/posts/${id}/downvote/`, // posts_downvote
     // POST /posts/{id}/upvote/
-    upvote: (id) => `cms-api/v1/cms-api/v1/posts/${id}/upvote/`, // posts_upvote
+    upvote: (id) => `cms-api/v1/posts/${id}/upvote/`, // posts_upvote
     // GET /posts/{id}/view/
-    view: (id) => `cms-api/v1/cms-api/v1/posts/${id}/view/`, // posts_view
+    view: (id) => `cms-api/v1/posts/${id}/view/`, // posts_view
     // GET /posts/search/
-    search: "cms-api/v1/cms-api/v1/posts/search/", // posts_search
+    search: "cms-api/v1/posts/search/", // posts_search
     // GET /posts/by-tag/
-    byTag: "cms-api/v1/cms-api/v1/posts/by-tag/", // posts_by_tag
+    byTag: "cms-api/v1/posts/by-tag/", // posts_by_tag
     // GET /posts/by-category/
-    byCategory: "cms-api/v1/cms-api/v1/posts/by-category/", // posts_by_category
+    byCategory: "cms-api/v1/posts/by-category/", // posts_by_category
     // POST /posts/{id}/track-view/
     trackView: (id) => `cms-api/v1/posts/${id}/track-view/`, // posts_track_view
     // POST /posts/{id}/engage/

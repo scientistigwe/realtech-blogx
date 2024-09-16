@@ -4,6 +4,8 @@ from . import views
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -30,19 +32,19 @@ router.register(r'notifications', views.NotificationViewSet, basename='notificat
 urlpatterns = [
     path('cms-api/v1/', include(router.urls)),
     # Custom actions
-   path('cms-api/v1/api/check-auth/', views.check_auth, name='check_auth'),
+    path('auth/token/', views.CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/token/refresh/', views.CustomTokenRefreshView.as_view(), name='token_refresh'),
+    path('auth/check-auth/', views.check_auth, name='check_auth'),
+    path('auth/logout/', views.logout_view, name='logout'),
     path('cms-api/v1/authors/<int:pk>/contact/', views.CustomUserViewSet.as_view({'post': 'contact'}), name='author-contact'),
     path('cms-api/v1/posts/<int:pk>/upvote/', views.PostViewSet.as_view({'post': 'upvote'}), name='post-upvote'),
     path('cms-api/v1/posts/<int:pk>/downvote/', views.PostViewSet.as_view({'post': 'downvote'}), name='post-downvote'),
     path('cms-api/v1/posts/most-viewed/', views.PostViewSet.as_view({'get': 'most_viewed'}), name='post-most-viewed'),
     path('cms-api/v1/posts/<int:pk>/view/', views.PostViewSet.as_view({'get': 'view'}), name='post-view'),
     path('cms-api/v1/posts/featured/', views.PostViewSet.as_view({'get': 'featured'}), name='post-featured'),
-    # path('posts/check-slug/', views.PostViewSet.as_view({'post': 'check_slug'}), name='post-check-slug'),
     path('cms-api/v1/comments/<int:pk>/upvote/', views.CommentViewSet.as_view({'post': 'upvote'}), name='comment-upvote'),
     path('cms-api/v1/comments/<int:pk>/downvote/', views.CommentViewSet.as_view({'post': 'downvote'}), name='comment-downvote'),
     path('cms-api/v1/comments/<int:pk>/moderate/', views.CommentViewSet.as_view({'post': 'moderate'}), name='comment-moderate'),
-    # path('notifications/<int:pk>/mark-as-read/', views.NotificationViewSet.as_view({'post': 'mark_as_read'}), name='notification-mark-as-read'),
-    # path('notifications/mark-multiple-as-read/', views.NotificationViewSet.as_view({'post': 'mark_multiple_as_read'}), name='notification-mark-multiple-as-read'),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),

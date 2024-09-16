@@ -22,3 +22,43 @@
     color: #333;
   }
   
+  /* components/Posts/PostDetail.css */
+
+.post-detail-card {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.post-detail-image {
+  max-height: 400px;
+  object-fit: cover;
+}
+
+.post-header {
+  margin-bottom: 15px;
+}
+
+.post-title {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.post-meta {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.author-name {
+  font-weight: bold;
+  color: #007bff;
+}
+
+.post-categories {
+  margin-top: 10px;
+}
+
+.post-content {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}

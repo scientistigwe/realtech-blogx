@@ -8,28 +8,30 @@ import {
   Alert,
   ListGroup,
 } from "react-bootstrap";
-import { postService } from "../../services/postsService";
+import { usePosts } from "../../hooks/usePosts"; // Import the usePosts hook
 import "../../styles/Components.css";
 
 const MostViewedPosts = () => {
+  const { fetchMostViewedPosts } = usePosts();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchMostViewedPosts = async () => {
+    const getMostViewedPosts = async () => {
       try {
-        const data = await postService.fetchMostViewedPosts();
-        setPosts(data);
+        const data = await fetchMostViewedPosts(); // Use the hook's method
+        setPosts(data || []); // Ensure data is always an array
       } catch (err) {
-        setError(err.message);
+        console.error("Error fetching most viewed posts:", err);
+        setError(err.message || "Failed to fetch most viewed posts.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMostViewedPosts();
-  }, []);
+    getMostViewedPosts();
+  }, [fetchMostViewedPosts]);
 
   return (
     <Container className="mt-5">
@@ -48,9 +50,13 @@ const MostViewedPosts = () => {
         <Row>
           <Col>
             <ListGroup>
-              {posts.map((post) => (
-                <ListGroup.Item key={post.id}>{post.title}</ListGroup.Item>
-              ))}
+              {posts.length > 0 ? (
+                posts.map((post) => (
+                  <ListGroup.Item key={post.id}>{post.title}</ListGroup.Item>
+                ))
+              ) : (
+                <ListGroup.Item>No posts available.</ListGroup.Item>
+              )}
             </ListGroup>
           </Col>
         </Row>

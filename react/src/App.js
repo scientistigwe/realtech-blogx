@@ -17,7 +17,7 @@ import PasswordResetConfirmation from "./components/auth/PasswordResetConfirmati
 import SetPassword from "./components/auth/SetPassword";
 
 // Profile
-import UserProfile from "./components/profile/UserProfile";
+import ProfilePage from "./pages/ProfilePage";
 
 // Posts
 import PostList from "./components/posts/PostList";
@@ -60,84 +60,91 @@ import RealTimeRecommendations from "./components/recommendations/RealTimeRecomm
 // Search
 import SearchPosts from "./components/Search/SearchPosts";
 
+import { AuthProvider } from "./contexts/AuthContext";
+
 function App() {
   return (
-    <Router>
-      <Header />
-      <Navbar />
-      <ErrorBoundary>
-        <Routes>
-          {/* Authentication Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/password-reset" element={<PasswordReset />} />
-          <Route
-            path="/password-reset-confirmation"
-            element={<PasswordResetConfirmation />}
-          />
-          <Route path="/set-password" element={<SetPassword />} />
+    <AuthProvider>
+      <Router>
+        <Header />
+        <Navbar />
+        <ErrorBoundary>
+          <Routes>
+            {/* Authentication Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/password-reset" element={<PasswordReset />} />
+            <Route
+              path="/password-reset-confirmation"
+              element={<PasswordResetConfirmation />}
+            />
+            <Route path="/set-password" element={<SetPassword />} />
 
-          {/* Public Routes */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/posts" element={<PostList />} />
-          <Route path="/posts/:postId" element={<PostDetail />} />
-          <Route path="/posts/slug-check" element={<PostSlugCheck />} />
-          <Route path="/posts/featured" element={<FeaturedPosts />} />
-          <Route path="/posts/most-viewed" element={<MostViewedPosts />} />
-          <Route path="/posts/by-category" element={<PostsByCategory />} />
-          <Route path="/comments" element={<CommentList />} />
-          <Route path="/notifications" element={<NotificationList />} />
-          <Route
-            path="/notifications/:notificationId"
-            element={<NotificationDetail />}
-          />
-          <Route path="/authors" element={<AuthorList />} />
-          <Route path="/authors/:authorId" element={<AuthorDetail />} />
-          {/* <Route path="/search" element={<SearchPosts />} /> */}
+            {/* Public Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/posts" element={<PostList />} />
+            <Route path="/posts/:id" element={<PostDetail />} />
+            <Route path="/posts/slug-check" element={<PostSlugCheck />} />
+            <Route path="/posts/featured" element={<FeaturedPosts />} />
+            <Route path="/posts/most-viewed" element={<MostViewedPosts />} />
+            <Route path="/posts/by-category" element={<PostsByCategory />} />
+            <Route path="/comments" element={<CommentList />} />
+            <Route path="/notifications" element={<NotificationList />} />
+            <Route
+              path="/notifications/:notificationId"
+              element={<NotificationDetail />}
+            />
+            <Route path="/authors" element={<AuthorList />} />
+            <Route path="/authors/:authorId" element={<AuthorDetail />} />
+            <Route path="/search" element={<SearchPosts />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/profile" element={<UserProfile />} />
-            <Route path="/posts/create" element={<PostCreate />} />
-            <Route path="/posts/edit/:postId" element={<PostEdit />} />
-            <Route path="/comments/create" element={<CreateComment />} />
-            <Route
-              path="/comments/edit/:commentId"
-              element={<UpdateComment />}
-            />
-            <Route
-              path="/comments/delete/:commentId"
-              element={<DeleteComment />}
-            />
-            <Route
-              path="/notifications/create"
-              element={<NotificationCreate />}
-            />
-            <Route
-              path="/notifications/edit/:notificationId"
-              element={<NotificationUpdate />}
-            />
-            <Route path="/contact-author" element={<ContactAuthor />} />
-            {/* <Route path="/analytics" element={<AnalyticsDashboard />} /> */}
-            {/* <Route path="/moderation" element={<ModerationDashboard />} /> */}
-            {/* <Route path="/recommendations" element={<RecommendationsList />} /> */}
-            {/* <Route
-              path="/recommendations/create"
-              element={<RecommendationForm />}
-            /> */}
-            {/* <Route
-              path="/recommendations/realtime"
-              element={<RealTimeRecommendations />}
-            /> */}
-          </Route>
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/posts/create" element={<PostCreate />} />
+              <Route path="/posts/edit/:postId" element={<PostEdit />} />
+              <Route path="/comments/create" element={<CreateComment />} />
+              <Route
+                path="/comments/edit/:commentId"
+                element={<UpdateComment />}
+              />
+              <Route
+                path="/comments/delete/:commentId"
+                element={<DeleteComment />}
+              />
+              <Route
+                path="/notifications/create"
+                element={<NotificationCreate />}
+              />
+              <Route
+                path="/notifications/edit/:notificationId"
+                element={<NotificationUpdate />}
+              />
+              <Route path="/contact-author" element={<ContactAuthor />} />
+              <Route path="/analytics" element={<AnalyticsDashboard />} />
+              <Route path="/moderation" element={<ModerationDashboard />} />
+              <Route
+                path="/recommendations"
+                element={<RecommendationsList />}
+              />
+              <Route
+                path="/recommendations/create"
+                element={<RecommendationForm />}
+              />
+              <Route
+                path="/recommendations/realtime"
+                element={<RealTimeRecommendations />}
+              />
+            </Route>
 
-          {/* Catch-all Route */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </ErrorBoundary>
-      <Footer />
-    </Router>
+            {/* Catch-all Route */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </ErrorBoundary>
+        <Footer />
+      </Router>
+    </AuthProvider>
   );
 }
 

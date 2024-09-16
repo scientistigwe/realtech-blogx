@@ -1,7 +1,7 @@
 // components/posts/PostCreate.js
 import React, { useState } from "react";
 import { Container, Form, Button, Alert } from "react-bootstrap";
-import { postService } from "../../services/postsService";
+import { usePosts } from "../../hooks/usePosts";
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
 import "../../styles/Global.css";
@@ -32,10 +32,10 @@ const PostCreate = () => {
       slug: "",
       parent: null,
     },
-    thumbnail: "", // Add thumbnail field
+    thumbnail: "",
   });
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+
+  const { createPost, loading, error, success } = usePosts();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -55,18 +55,14 @@ const PostCreate = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      await postService.createPost(post);
-      setSuccess("Post created successfully!");
-    } catch (err) {
-      setError("Failed to create post.");
-    }
+    await createPost(post);
   };
 
   return (
     <Container className="mt-5">
       <h2 className="text-center mb-4">Create Post</h2>
       <Form onSubmit={handleSubmit}>
+        {loading && <p>Loading...</p>}
         {error && <Alert variant="danger">{error}</Alert>}
         {success && <Alert variant="success">{success}</Alert>}
 
@@ -295,8 +291,8 @@ const PostCreate = () => {
           />
         </Form.Group>
 
-        <Button variant="primary" type="submit">
-          Create Post
+        <Button variant="primary" type="submit" disabled={loading}>
+          {loading ? "Creating..." : "Create Post"}
         </Button>
       </Form>
     </Container>

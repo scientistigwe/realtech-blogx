@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Container,
   Row,
@@ -8,20 +8,21 @@ import {
   Alert,
   Breadcrumb,
 } from "react-bootstrap";
-import { useParams } from "react-router-dom";
-import { authService } from "../../services/authService";
-import { validatePassword } from "../../utils/validations";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
 import "../../styles/Global.css";
 import "../../styles/Components.css";
+import { validatePassword } from "../../utils/validations";
 
 const SetPassword = () => {
   const { uid, token } = useParams();
-  const [newPassword, setNewPassword] = useState("");
-  const [formError, setFormError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { setPassword, loading, error } = useAuth(); // Use the existing hook
+  const [newPassword, setNewPassword] = React.useState("");
+  const [formError, setFormError] = React.useState(null);
+  const [successMessage, setSuccessMessage] = React.useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,17 +33,15 @@ const SetPassword = () => {
       return;
     }
 
-    setLoading(true);
     try {
-      await authService.setPassword({ new_password: newPassword, uid, token });
+      await setPassword({ new_password: newPassword, uid, token });
       setSuccessMessage("Password has been successfully set.");
       setFormError(null);
+      setTimeout(() => navigate("/login"), 3000); // Redirect after success
     } catch (err) {
       setFormError("Failed to set password.");
       setSuccessMessage("");
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -58,6 +57,9 @@ const SetPassword = () => {
           <h2 className="text-center mb-4">Set Password</h2>
           {successMessage && <Alert variant="success">{successMessage}</Alert>}
           {formError && <Alert variant="danger">{formError}</Alert>}
+          {error && (
+            <Alert variant="danger">An error occurred. Please try again.</Alert>
+          )}
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>New Password</Form.Label>

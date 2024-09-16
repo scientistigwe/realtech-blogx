@@ -1,5 +1,4 @@
-// components/posts/PostList.js
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Container,
   Row,
@@ -8,7 +7,7 @@ import {
   Alert,
   Spinner,
 } from "react-bootstrap";
-import { postService } from "../../services/postsService";
+import { usePosts } from "../../hooks/usePosts";
 import PostCard from "./PostCard"; // Import the PostCard component
 import "../../styles/Layout.css";
 import "../../styles/Pages.css";
@@ -16,26 +15,7 @@ import "../../styles/Global.css";
 import "../../styles/Components.css";
 
 const PostList = () => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        console.log("Fetching posts...");
-        const data = await postService.fetchPosts();
-        console.log("Received data:", data);
-        setPosts(data);
-      } catch (err) {
-        console.error("Error fetching posts:", err);
-        setError("Failed to load posts.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPosts();
-  }, []);
+  const { posts, error, loading } = usePosts.fetchPosts();
 
   return (
     <Container className="mt-5">
