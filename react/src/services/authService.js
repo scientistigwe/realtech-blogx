@@ -1,10 +1,11 @@
-import Cookies from "js-cookie";
+// services/authService.js
 import {
   createJwt as apiCreateJwt,
   refreshJwt as apiRefreshJwt,
   verifyJwt as apiVerifyJwt,
   checkAuth as apiCheckAuth,
   createUser as apiCreateUser,
+  logout as apiLogout,
   getUsersList as apiGetUsersList,
   activateUser as apiActivateUser,
   getUserProfile as apiGetUserProfile,
@@ -22,22 +23,26 @@ import {
   updateUserById as apiUpdateUserById,
   partialUpdateUserById as apiPartialUpdateUserById,
   deleteUserById as apiDeleteUserById,
-} from "../utils/api";
+} from "../utils/api"; // Adjust the path as necessary
 
 const handleApiError = (error, message) => {
-  const errorMessage = error.response?.data || error.message;
-  console.error(`${message}:`, errorMessage);
-  throw new Error(errorMessage);
+  console.error(`${message}:`, error.response?.data || error.message);
+  throw error;
 };
 
 export const authService = {
-  async createJwt({ username, password }) {
+  async createJwt(credentials) {
     try {
+      const { username, password } = credentials;
       const response = await apiCreateJwt({ username, password });
       console.log("JWT created successfully:", response.data);
-      return response.data;
+      return {
+        user: response.data.user || null,
+        isAuthenticated: true,
+      };
     } catch (error) {
       handleApiError(error, "Error creating JWT");
+      return { user: null, isAuthenticated: false };
     }
   },
 
@@ -47,39 +52,48 @@ export const authService = {
       console.log("JWT refreshed:", response.data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error refreshing JWT");
+      handleApiError(error, "Error refreshing JWT:");
     }
   },
 
   async verifyJwt(token) {
     try {
       await apiVerifyJwt({ token });
-      return true; // Return true on success
+      return true;
     } catch (error) {
-      handleApiError(error, "Error verifying JWT");
-      return false; // Return false if verification fails
+      handleApiError(error, "Error verifying JWT:");
+      return false;
     }
   },
 
   async checkAuth() {
     try {
       const response = await apiCheckAuth();
-      console.log("Authentication check:", response.data);
-      const isAuthenticated = Boolean(Cookies.get("sessionid"));
-      return { user: response.data.user || null, isAuthenticated };
+      console.log("Authentication check result:", response.data);
+      return {
+        user: response.data.user || null,
+        isAuthenticated: true,
+      };
     } catch (error) {
-      handleApiError(error, "Error checking authentication");
+      console.error("Authentication check failed:", error);
       return { user: null, isAuthenticated: false };
     }
   },
 
   async createUser(userData) {
     try {
+      console.log("Creating user:", userData);
       const response = await apiCreateUser(userData);
       console.log("User created successfully:", response.data);
-      return response.data;
+      if (response.data && response.data.username) {
+        return this.createJwt({
+          username: userData.username,
+          password: userData.password,
+        });
+      }
+      return { user: response.data, isAuthenticated: false };
     } catch (error) {
-      handleApiError(error, "Error creating user");
+      handleApiError(error, "Error creating user:");
     }
   },
 
@@ -88,7 +102,7 @@ export const authService = {
       const response = await apiGetUsersList();
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error fetching users list");
+      handleApiError(error, "Error fetching users list:");
     }
   },
 
@@ -97,16 +111,17 @@ export const authService = {
       const response = await apiActivateUser(data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error activating user");
+      handleApiError(error, "Error activating user:");
     }
   },
 
   async getUserProfile() {
     try {
       const response = await apiGetUserProfile();
+      console.log("User profile fetched:", response.data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error fetching user profile");
+      handleApiError(error, "Error fetching user profile:");
     }
   },
 
@@ -115,7 +130,7 @@ export const authService = {
       const response = await apiUpdateUserProfile(data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error updating user profile");
+      handleApiError(error, "Error updating user profile:");
     }
   },
 
@@ -124,7 +139,7 @@ export const authService = {
       const response = await apiPartialUpdateUserProfile(data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error partially updating user profile");
+      handleApiError(error, "Error partially updating user profile:");
     }
   },
 
@@ -133,7 +148,7 @@ export const authService = {
       const response = await apiDeleteUserProfile();
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error deleting user profile");
+      handleApiError(error, "Error deleting user profile:");
     }
   },
 
@@ -142,7 +157,7 @@ export const authService = {
       const response = await apiResendActivation(data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error resending activation email");
+      handleApiError(error, "Error resending activation email:");
     }
   },
 
@@ -151,7 +166,7 @@ export const authService = {
       const response = await apiResetPassword(data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error requesting password reset");
+      handleApiError(error, "Error requesting password reset:");
     }
   },
 
@@ -160,7 +175,7 @@ export const authService = {
       const response = await apiConfirmResetPassword(data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error confirming password reset");
+      handleApiError(error, "Error confirming password reset:");
     }
   },
 
@@ -169,7 +184,7 @@ export const authService = {
       const response = await apiResetUsername(data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error requesting username reset");
+      handleApiError(error, "Error requesting username reset:");
     }
   },
 
@@ -178,7 +193,7 @@ export const authService = {
       const response = await apiConfirmResetUsername(data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error confirming username reset");
+      handleApiError(error, "Error confirming username reset:");
     }
   },
 
@@ -187,7 +202,7 @@ export const authService = {
       const response = await apiSetPassword(data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error setting new password");
+      handleApiError(error, "Error setting new password:");
     }
   },
 
@@ -196,7 +211,7 @@ export const authService = {
       const response = await apiSetUsername(data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error setting new username");
+      handleApiError(error, "Error setting new username:");
     }
   },
 
@@ -205,7 +220,7 @@ export const authService = {
       const response = await apiGetUserProfileById(id);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error fetching user profile by ID");
+      handleApiError(error, "Error fetching user profile by ID:");
     }
   },
 
@@ -214,7 +229,7 @@ export const authService = {
       const response = await apiUpdateUserById(id, data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error updating user profile by ID");
+      handleApiError(error, "Error updating user profile by ID:");
     }
   },
 
@@ -223,7 +238,7 @@ export const authService = {
       const response = await apiPartialUpdateUserById(id, data);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error partially updating user profile by ID");
+      handleApiError(error, "Error partially updating user profile by ID:");
     }
   },
 
@@ -232,7 +247,7 @@ export const authService = {
       const response = await apiDeleteUserById(id);
       return response.data;
     } catch (error) {
-      handleApiError(error, "Error deleting user profile by ID");
+      handleApiError(error, "Error deleting user profile by ID:");
     }
   },
 };

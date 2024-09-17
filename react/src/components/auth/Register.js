@@ -10,89 +10,58 @@ import {
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import {
-  validateUsername,
-  validateEmail,
-  validatePassword,
-} from "../../utils/validations";
+import "../../styles/Layout.css";
+import "../../styles/Pages.css";
+import "../../styles/Global.css";
+import "../../styles/Components.css";
 
 const Register = () => {
   const navigate = useNavigate();
   const { createUser: register, createJwt: login, loading, error } = useAuth();
-
-  // State for form data and form error messages
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
-
   const [formError, setFormError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
 
-  // Handle input field changes
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prevData) => ({
+      ...prevData,
+      [e.target.name]: e.target.value,
+    }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError(null);
+
     const { username, email, password, confirmPassword } = formData;
 
-    // Validating the form inputs
-    if (!validateUsername(username)) {
-      setFormError("Username must be between 3 and 150 characters.");
-      return;
-    }
-    if (!validateEmail(email)) {
-      setFormError("Invalid email format.");
-      return;
-    }
-    if (!validatePassword(password)) {
-      setFormError(
-        "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character."
-      );
-      return;
-    }
-    if (password !== confirmPassword) {
-      setFormError("Passwords do not match.");
+    // Basic validation
+    if (!username || !email || !password || !confirmPassword) {
+      setFormError("All fields are required.");
       return;
     }
 
-    // If validations pass, try to register and log in the user
     try {
-      console.log("Attempting to register user...");
       await register({
         username,
         email,
         password,
         re_password: confirmPassword,
       });
-      console.log("User registered successfully");
 
-      console.log("Attempting to log in...");
       const loginResult = await login(username, password);
-      console.log("Login result:", loginResult);
-
       if (loginResult.detail === "Login successful") {
-        setSuccessMessage("Registration successful. You are now logged in.");
         setFormError(null);
-
-        // Navigate to user profile after successful registration and login
-        console.log(`Navigating to /profile/${username} in 3 seconds...`);
-        setTimeout(() => {
-          console.log("Executing navigation now");
-          navigate(`/profile/${username}`);
-        }, 3000);
+        navigate("/dashboard");
       } else {
         throw new Error("Login failed after registration");
       }
     } catch (err) {
-      console.error("Error during registration:", err);
       setFormError(err.message || "Failed to register. Please try again.");
-      setSuccessMessage("");
     }
   };
 
@@ -106,16 +75,14 @@ const Register = () => {
       <Row className="justify-content-center">
         <Col md={6} lg={4}>
           <h2 className="text-center mb-4">Register</h2>
-          {/* Display success or error messages */}
-          {successMessage && <Alert variant="success">{successMessage}</Alert>}
+
           {formError && <Alert variant="danger">{formError}</Alert>}
           {error && !formError && (
             <Alert variant="danger">An error occurred. Please try again.</Alert>
           )}
 
-          {/* Registration form */}
           <Form onSubmit={handleSubmit}>
-            <Form.Group controlId="username">
+            <Form.Group className="mb-3">
               <Form.Label>Username</Form.Label>
               <Form.Control
                 type="text"
@@ -126,7 +93,7 @@ const Register = () => {
               />
             </Form.Group>
 
-            <Form.Group controlId="email">
+            <Form.Group className="mb-3">
               <Form.Label>Email</Form.Label>
               <Form.Control
                 type="email"
@@ -137,7 +104,7 @@ const Register = () => {
               />
             </Form.Group>
 
-            <Form.Group controlId="password">
+            <Form.Group className="mb-3">
               <Form.Label>Password</Form.Label>
               <Form.Control
                 type="password"
@@ -148,7 +115,7 @@ const Register = () => {
               />
             </Form.Group>
 
-            <Form.Group controlId="confirmPassword">
+            <Form.Group className="mb-3">
               <Form.Label>Confirm Password</Form.Label>
               <Form.Control
                 type="password"
@@ -159,7 +126,6 @@ const Register = () => {
               />
             </Form.Group>
 
-            {/* Register button */}
             <Button
               type="submit"
               variant="primary"

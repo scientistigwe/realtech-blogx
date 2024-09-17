@@ -17,16 +17,15 @@ import "../../styles/Components.css";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { createJwt, loading, error } = useAuth(); // Ensure useAuth provides createJwt
+  const { createJwt, loading, error } = useAuth();
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [formError, setFormError] = useState(null);
 
-  // Handle change for form fields
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value, // Dynamically update the appropriate field
+      [name]: value,
     }));
   };
 
@@ -36,18 +35,15 @@ const Login = () => {
 
     const { username, password } = formData;
 
-    // Basic validation
     if (!username || !password) {
       setFormError("Username and password are required.");
       return;
     }
 
     try {
-      // Call `createJwt` with username and password as separate arguments
       const result = await createJwt(username, password);
       if (result.message === "Login successful") {
-        // Redirect to dashboard or home page
-        navigate(`/profile`);
+        navigate("/dashboard"); // Assuming we have a dashboard route
       } else {
         setFormError("Login failed. Please try again.");
       }
@@ -67,7 +63,6 @@ const Login = () => {
         <Col md={6} lg={4}>
           <h2 className="text-center mb-4">Login</h2>
 
-          {/* Form errors or server errors */}
           {formError && <Alert variant="danger">{formError}</Alert>}
           {error && !formError && (
             <Alert variant="danger">An error occurred. Please try again.</Alert>
@@ -79,8 +74,8 @@ const Login = () => {
               <Form.Control
                 type="text"
                 name="username"
-                value={formData.username} // Controlled input
-                onChange={handleChange} // Use handleChange function
+                value={formData.username}
+                onChange={handleChange}
                 required
               />
             </Form.Group>
@@ -90,8 +85,8 @@ const Login = () => {
               <Form.Control
                 type="password"
                 name="password"
-                value={formData.password} // Controlled input
-                onChange={handleChange} // Use handleChange function
+                value={formData.password}
+                onChange={handleChange}
                 required
               />
             </Form.Group>

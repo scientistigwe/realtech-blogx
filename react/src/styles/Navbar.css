@@ -99,3 +99,75 @@
   .form-control:focus {
     box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
   }
+
+
+  /* New and prioritized style */
+  /* Navbar.css */
+.category-navbar {
+  position: relative;
+}
+
+.category-item {
+  position: static;
+}
+
+.mega-menu {
+  display: none;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  background: white;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  padding: 20px;
+  z-index: 1000;
+}
+
+.category-item:hover .mega-menu {
+  display: flex;
+}
+
+.mega-menu-column {
+  flex: 1;
+  padding: 0 15px;
+}
+
+.mega-menu-column ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.mega-menu-column li {
+  margin-bottom: 10px;
+}
+
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: white;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  padding: 20px;
+  z-index: 1000;
+}
+
+.search-results ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.search-results li {
+  margin-bottom: 10px;
+}
+
+@media (max-width: 991px) {
+  .mega-menu {
+    position: static;
+    box-shadow: none;
+  }
+  
+  .search-results {
+    position: static;
+    box-shadow: none;
+  }
+}

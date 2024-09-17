@@ -14,6 +14,8 @@ export const apiEndpoints = {
 
     // POST /auth/users/
     usersCreate: "auth/users/", // auth_users_create
+    // POST /auth/logout/
+    logout: "auth/logout/", // auth_users_create
     // GET /auth/users/
     usersList: "auth/users/", // auth_users_list
     // POST /auth/users/activation/

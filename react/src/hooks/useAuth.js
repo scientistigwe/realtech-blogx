@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo } from "react";
-import Cookies from "js-cookie"; // Import js-cookie
 import { authService } from "../services/authService";
 
 export const useAuth = () => {
@@ -10,10 +9,12 @@ export const useAuth = () => {
     isAuthenticated: false,
   });
 
+  // Utility function to update the state
   const updateState = useCallback((newState) => {
     setState((prevState) => ({ ...prevState, ...newState }));
   }, []);
 
+  // Generalized handler for async requests
   const handleRequest = useCallback(
     async (requestFn, ...args) => {
       updateState({ loading: true, error: null });
@@ -30,6 +31,7 @@ export const useAuth = () => {
     [updateState]
   );
 
+  // Authentication-related methods
   const authMethods = useMemo(
     () => ({
       createJwt: async (username, password) => {
@@ -38,11 +40,10 @@ export const useAuth = () => {
             username,
             password,
           });
-          Cookies.set("sessionid", userProfile.sessionid); // Store sessionid in cookies
           updateState({ user: userProfile, isAuthenticated: true });
           return userProfile;
         } catch (error) {
-          throw error; // Pass error to be handled by the component
+          throw error; // Let component handle errors
         }
       },
 
@@ -54,7 +55,6 @@ export const useAuth = () => {
 
       logout: async () => {
         await handleRequest(authService.logout);
-        Cookies.remove("sessionid"); // Remove sessionid from cookies
         updateState({ user: null, isAuthenticated: false });
       },
 
@@ -67,6 +67,7 @@ export const useAuth = () => {
     [handleRequest, updateState]
   );
 
+  // Utility to generate additional methods
   const generateMethod = useCallback(
     (methodName) => {
       return async (...args) => handleRequest(authService[methodName], ...args);
@@ -74,6 +75,7 @@ export const useAuth = () => {
     [handleRequest]
   );
 
+  // List of additional methods provided by authService
   const additionalMethods = useMemo(
     () => [
       "refreshJwt",
@@ -99,6 +101,7 @@ export const useAuth = () => {
     []
   );
 
+  // Combine auth methods with generated methods for additional functionality
   const allAuthMethods = useMemo(() => {
     const methods = { ...authMethods };
     additionalMethods.forEach((method) => {
@@ -107,6 +110,7 @@ export const useAuth = () => {
     return methods;
   }, [authMethods, additionalMethods, generateMethod]);
 
+  // Return state and methods combined
   return useMemo(
     () => ({
       ...state,

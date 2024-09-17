@@ -1,5 +1,5 @@
 // components/CategoryNavbar.js
-// components/CategoryNavbar.js
+
 import React, { useEffect } from "react";
 import { Dropdown, Modal, Button, Nav, Spinner } from "react-bootstrap";
 import { useCategories } from "../../hooks/useCategories";

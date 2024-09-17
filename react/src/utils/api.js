@@ -12,7 +12,9 @@ export const refreshJwt = (data) =>
 export const verifyJwt = (data) =>
   apiRequest("POST", apiEndpoints.auth.jwtVerify, data);
 export const createUser = (data) =>
-  apiRequest("POST", apiEndpoints.auth.usersCreate, data);
+  apiRequest("POST", apiEndpoints.auth.jwtVerify, data);
+export const logout = (data) =>
+  apiRequest("POST", apiEndpoints.auth.logout, data);
 export const getUsersList = () =>
   apiRequest("GET", apiEndpoints.auth.usersList);
 export const activateUser = (data) =>
