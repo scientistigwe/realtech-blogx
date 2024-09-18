@@ -1,78 +1,128 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
-import Cookies from "js-cookie";
+// context/AuthContext.js
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { authService } from "../services/authService";
-import { usersService } from "../services/usersService";
 
-const AuthContext = createContext(null);
-
-export const useAuth = () => useContext(AuthContext);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState({
+    loading: false,
+    error: null,
+    user: null,
+    isAuthenticated: false,
+  });
 
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const authResponse = await authService.checkAuth();
-        if (authResponse.isAuthenticated) {
-          const userProfile = await usersService.getCurrentUserProfile();
-          setUser(userProfile);
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error checking auth status:", error);
-        setIsAuthenticated(false);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuthStatus();
+  const updateState = useCallback((newState) => {
+    setState((prevState) => ({ ...prevState, ...newState }));
   }, []);
 
-  const login = async (credentials) => {
-    try {
-      const { token } = await authService.login(
-        credentials.username,
-        credentials.password
-      );
-      Cookies.set("token", token, {
-        expires: 1,
-        secure: true,
-        sameSite: "Strict",
-      }); // Store token in cookie
-      setIsAuthenticated(true);
-      const userProfile = await usersService.getCurrentUserProfile();
-      setUser(userProfile);
-    } catch (error) {
-      console.error("Login failed:", error);
-    }
-  };
+  const handleRequest = useCallback(
+    async (requestFn, ...args) => {
+      updateState({ loading: true, error: null });
+      console.log("Request started");
+      try {
+        const result = await requestFn(...args);
+        console.log("Request succeeded:", result);
+        return result;
+      } catch (error) {
+        console.error("Request failed:", error);
+        updateState({ error });
+        throw error;
+      } finally {
+        updateState({ loading: false });
+        console.log("Request completed");
+      }
+    },
+    [updateState]
+  );
 
-  const logout = async () => {
-    try {
-      await authService.logout();
-      Cookies.remove("token"); // Remove token from cookie
-      setIsAuthenticated(false);
-      setUser(null);
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
+  const authMethods = useMemo(
+    () => ({
+      createJwt: async (username, password) => {
+        console.log("Creating JWT...");
+        const userProfile = await handleRequest(authService.createJwt, {
+          username,
+          password,
+        });
+        console.log("JWT created:", userProfile);
+        updateState({ user: userProfile, isAuthenticated: true });
+        return userProfile;
+      },
+      checkAuth: async () => {
+        console.log("Checking authentication...");
+        const data = await handleRequest(authService.checkAuth);
+        console.log("Authentication checked:", data);
+        updateState({ user: data.user, isAuthenticated: true });
+        return data;
+      },
+      logout: async () => {
+        console.log("Logging out...");
+        await handleRequest(authService.logout);
+        console.log("Logged out");
+        updateState({ user: null, isAuthenticated: false });
+      },
+      createUser: async (userData) => {
+        console.log("Creating user");
+        const result = await handleRequest(authService.createUser, userData);
+        updateState({ user: result.user, isAuthenticated: true });
+        console.log("User created:", result);
+        return result;
+      },
+    }),
+    [handleRequest, updateState]
+  );
 
-  const value = {
-    isAuthenticated,
-    user,
-    login,
-    logout,
-    loading,
-  };
+  const generateMethod = useCallback(
+    (methodName) => {
+      return async (...args) => handleRequest(authService[methodName], ...args);
+    },
+    [handleRequest]
+  );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const additionalMethods = useMemo(
+    () => [
+      "refreshJwt",
+      "verifyJwt",
+      "getUsersList",
+      "activateUser",
+      "getUserProfile",
+      "updateUserProfile",
+      "partialUpdateUserProfile",
+      "deleteUserProfile",
+      "resendActivation",
+      "resetPassword",
+      "confirmResetPassword",
+      "resetUsername",
+      "confirmResetUsername",
+      "setPassword",
+      "setUsername",
+      "getUserProfileById",
+      "updateUserProfileById",
+      "partialUpdateUserProfileById",
+      "deleteUserProfileById",
+    ],
+    []
+  );
+
+  const allAuthMethods = useMemo(() => {
+    const methods = { ...authMethods };
+    additionalMethods.forEach((method) => {
+      methods[method] = generateMethod(method);
+    });
+    return methods;
+  }, [authMethods, additionalMethods, generateMethod]);
+
+  return (
+    <AuthContext.Provider value={{ ...state, ...allAuthMethods }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
+
+export const useAuthContext = () => useContext(AuthContext);

@@ -21,15 +21,31 @@ from django.conf import settings
 from django.utils import timezone
 
 # Custom Token Obtain Pair View
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
+        # Instantiate the serializer with request data
+        serializer = TokenObtainPairSerializer(data=request.data)
+        
+        # Validate the serializer
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            return JsonResponse({"message": str(e)}, status=400)
+
+        # At this point, the user is authenticated and can be accessed
+        user = serializer.user
+
+        # Call the parent's post method to generate the response
         response = super().post(request, *args, **kwargs)
+
         if response.status_code == 200:
+            # Set CSRF token and access/refresh token cookies
             csrf.get_token(request)
             response.set_cookie(
-                response.data['access'],
                 'access_token',
-                # access_token,
+                response.data['access'],
                 httponly=True,
                 secure=not settings.DEBUG,
                 samesite='Lax' if settings.DEBUG else 'Strict',
@@ -41,9 +57,42 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 httponly=True,
                 samesite='Lax'
             )
-            return JsonResponse({"message": "Login successful"}, status=200)
+
+            # Construct user data for response
+            user_data = {
+                'id': user.id,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+                'bio': user.bio,
+                'website': user.website,
+                'location': user.location,
+                'profile_picture': user.profile_picture.url if user.profile_picture else None,
+                'social_profiles': user.social_profiles,
+                'last_active': user.last_active,
+                'is_author': user.is_author,
+                'role': user.role,
+                'is_superuser': user.is_superuser,
+                'is_staff': user.is_staff,
+                'is_active': user.is_active,
+                'last_login': user.last_login,
+                'date_joined': user.date_joined,
+                'created_at': user.created_at,
+                'updated_at': user.updated_at,
+            }
+
+            # Return the response with user data
+            return JsonResponse({
+                "message": "Login successful",
+                "access": response.data['access'],
+                "refresh": response.data['refresh'],
+                "user": user_data
+            }, status=200)
+
+        # If something goes wrong, return the original response
         return response
-    
+
 # Custom Token Refresh View
 class CustomTokenRefreshView(TokenRefreshView):
     permission_classes = [AllowAny]

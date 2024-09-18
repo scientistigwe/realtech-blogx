@@ -1,18 +1,24 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../hooks/useAuth";
+import { useDispatch, useSelector } from "react-redux";
+import { selectIsAuthenticated } from "../../features/auth/authSelectors";
+import { logoutUser } from "../../features/auth/authThunks"; // Import the logout thunk
+import { toast } from "react-toastify"; // Import toast
 import "../../styles/Header.css";
 
 const Header = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuth();
+  const dispatch = useDispatch();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   const handleLogout = async () => {
     try {
-      await logout();
-      navigate("/login");
+      await dispatch(logoutUser()); // Dispatch logout thunk
+      toast.success("Logged out successfully!"); // Success notification
+      navigate("/"); // Redirect to home page
     } catch (err) {
       console.error("Error logging out:", err);
+      toast.error("Error logging out. Please try again."); // Error notification
     }
   };
 

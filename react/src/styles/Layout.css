@@ -70,29 +70,30 @@
 
 /* Footer Styles */
 .footer {
+
     background-color: #333;
     color: white;
-    padding: 1rem 0;
     position: relative;
+    bottom: 0;
     width: 100%;
 }
 
 .footer-container {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    /* gap: 20px; */
     max-width: 1200px;
     margin: auto;
-    padding: 0 20px;
+    padding: 0;
 }
 
 .footer-section {
-    margin-bottom: 20px;
+    margin-bottom: 5em;
 }
 
 .footer-section h5 {
     font-size: 1.25rem;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 .footer-links {
@@ -116,13 +117,17 @@
 
 .d-flex {
     display: flex;
-    gap: 15px;
+    gap: 20px;
 }
 
 .footer-bottom {
     text-align: center;
-    padding: 1rem;
+    padding: 0.5rem;
     background-color: #222;
+    color: white;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
 }
 
 .back-to-top {

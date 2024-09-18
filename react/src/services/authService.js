@@ -97,6 +97,16 @@ export const authService = {
     }
   },
 
+  async logout() {
+    try {
+      const response = await apiLogout(); // Assuming apiLogout is properly defined
+      console.log("Logout successful:", response);
+      return response;
+    } catch (error) {
+      handleApiError(error, "Error during logout");
+    }
+  },
+
   async getUsersList() {
     try {
       const response = await apiGetUsersList();

@@ -1,228 +1,122 @@
+// UserProfile.js
 import React, { useState, useEffect } from "react";
-import {
-  Container,
-  Form,
-  Button,
-  Image,
-  Breadcrumb,
-  Alert,
-} from "react-bootstrap";
-import { useUsers } from "../../hooks/useUsers"; // Adjust the path as necessary
-import "../../styles/Users.css";
-
-const defaultAvatar = "path/to/default-avatar.png"; // Path to your default avatar image
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { Container, Row, Col, Nav, Alert } from "react-bootstrap";
+import { fetchUserProfile, checkAuth } from "../../features/auth/authThunks";
+import UserProfileCard from "./ProfileCard";
+import UpdateProfile from "./UpdateProfile";
+// import ResetPassword from "./ResetPassword";
+// import DeleteAccount from "./DeleteAccount";
+// import UserPosts from "./UserPosts";
+import "../../styles/UserProfile.css";
 
 const UserProfile = () => {
-  const {
-    getCurrentUserProfile,
-    updateUser,
-    partialUpdateUser, // Now we will use this
-    deleteUser,
-    loading,
-    error: apiError,
-  } = useUsers();
-
-  const [user, setUser] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    first_name: "",
-    last_name: "",
-    bio: "",
-    website: "",
-    location: "",
-  });
-  const [formError, setFormError] = useState("");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, loading, error } = useSelector(
+    (state) => state.auth
+  );
+  const [activeComponent, setActiveComponent] = useState("profile");
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const checkAuthentication = async () => {
       try {
-        const data = await getCurrentUserProfile();
-        if (data) {
-          setUser(data);
-          setFormData({
-            username: data.username || "",
-            email: data.email || "",
-            first_name: data.first_name || "",
-            last_name: data.last_name || "",
-            bio: data.bio || "",
-            website: data.website || "",
-            location: data.location || "",
-          });
+        await dispatch(checkAuth()).unwrap();
+        if (!user) {
+          dispatch(fetchUserProfile());
         }
       } catch (error) {
-        console.error("Failed to fetch user profile:", error);
-        setFormError("Failed to load profile.");
+        console.error("Authentication check failed:", error);
+        navigate("/login");
       }
     };
 
-    fetchUserProfile();
-  }, [getCurrentUserProfile]);
+    checkAuthentication();
+  }, [dispatch, navigate, user]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+  if (!isAuthenticated) {
+    return <Alert variant="warning">Please log in to view your profile.</Alert>;
+  }
 
-  const handleDelete = async () => {
-    try {
-      await deleteUser(user.id);
-      alert("Profile deleted successfully.");
-    } catch (error) {
-      console.error("Failed to delete user profile:", error);
-      setFormError("Failed to delete profile.");
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (isEditing) {
-        await updateUser(user.id, formData);
-        setUser({ ...user, ...formData });
-        setIsEditing(false);
-      }
-    } catch (error) {
-      console.error("Failed to update user profile:", error);
-      setFormError("Failed to update profile.");
-    }
-  };
-
-  // New function for partial update of the bio field
-  const handlePartialUpdate = async () => {
-    try {
-      const partialData = { bio: formData.bio }; // Only update the bio
-      await partialUpdateUser(user.id, partialData);
-      setUser({ ...user, bio: formData.bio });
-      alert("Bio updated successfully.");
-    } catch (error) {
-      console.error("Failed to partially update user profile:", error);
-      setFormError("Failed to update bio.");
+  const renderActiveComponent = () => {
+    switch (activeComponent) {
+      case "profile":
+        return <UserProfileCard user={user} />;
+      case "update":
+        return <UpdateProfile user={user} />;
+      // case "resetPassword":
+      //   return <ResetPassword />;
+      // case "deleteAccount":
+      //   return <DeleteAccount />;
+      // case "posts":
+      //   return <UserPosts userId={user.id} />;
+      default:
+        return <UserProfileCard user={user} />;
     }
   };
 
   return (
-    <Container className="mt-5">
-      <Breadcrumb>
-        <Breadcrumb.Item href="/">Home</Breadcrumb.Item>
-        <Breadcrumb.Item active>User Profile</Breadcrumb.Item>
-      </Breadcrumb>
-      {formError && <Alert variant="danger">{formError}</Alert>}
-      {apiError && <Alert variant="danger">{apiError}</Alert>}
-      {loading && <Alert variant="info">Loading...</Alert>}
-      {user && (
-        <>
-          <h1>User Profile</h1>
-          <Image
-            src={user.profile_picture || defaultAvatar}
-            roundedCircle
-            className="profile-picture"
-            alt="Profile"
-          />
-          <Form onSubmit={handleSubmit}>
-            <Form.Group controlId="username">
-              <Form.Label>Username</Form.Label>
-              <Form.Control
-                type="text"
-                name="username"
-                value={formData.username}
-                readOnly={!isEditing}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group controlId="email">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                value={formData.email}
-                readOnly={!isEditing}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group controlId="first_name">
-              <Form.Label>First Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="first_name"
-                value={formData.first_name}
-                readOnly={!isEditing}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group controlId="last_name">
-              <Form.Label>Last Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="last_name"
-                value={formData.last_name}
-                readOnly={!isEditing}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group controlId="bio">
-              <Form.Label>Bio</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                name="bio"
-                value={formData.bio}
-                readOnly={!isEditing}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group controlId="website">
-              <Form.Label>Website</Form.Label>
-              <Form.Control
-                type="text"
-                name="website"
-                value={formData.website}
-                readOnly={!isEditing}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group controlId="location">
-              <Form.Label>Location</Form.Label>
-              <Form.Control
-                type="text"
-                name="location"
-                value={formData.location}
-                readOnly={!isEditing}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit">
-              {isEditing ? "Save Changes" : "Edit Profile"}
-            </Button>
-            {isEditing && (
-              <Button
-                variant="secondary"
-                onClick={() => setIsEditing(false)}
-                className="ms-2"
-              >
-                Cancel
-              </Button>
-            )}
-            {isEditing && (
-              <Button variant="danger" onClick={handleDelete} className="ms-2">
-                Delete Profile
-              </Button>
-            )}
-            {isEditing && (
-              <Button
-                variant="warning"
-                onClick={handlePartialUpdate}
-                className="ms-2"
-              >
-                Update Bio Only
-              </Button>
-            )}
-          </Form>
-        </>
-      )}
+    <Container fluid className="mt-5">
+      <Row>
+        <Col md={3}>
+          <Nav className="flex-column">
+            <Nav.Link onClick={() => setActiveComponent("profile")}>
+              Profile
+            </Nav.Link>
+            <Nav.Link onClick={() => setActiveComponent("update")}>
+              Update Profile
+            </Nav.Link>
+            <Nav.Link onClick={() => setActiveComponent("resetPassword")}>
+              Reset Password
+            </Nav.Link>
+            <Nav.Link onClick={() => setActiveComponent("deleteAccount")}>
+              Delete Account
+            </Nav.Link>
+            <Nav.Link onClick={() => setActiveComponent("posts")}>
+              My Posts
+            </Nav.Link>
+          </Nav>
+        </Col>
+        <Col md={9}>
+          {error && <Alert variant="danger">{error}</Alert>}
+          {loading ? (
+            <Alert variant="info">Loading...</Alert>
+          ) : (
+            renderActiveComponent()
+          )}
+        </Col>
+      </Row>
     </Container>
   );
 };
 
 export default UserProfile;
+
+// // Placeholder components for other actions
+// // ResetPassword.js
+// import React from "react";
+
+// const ResetPassword = () => {
+//   return <h2>Reset Password Component (To be implemented)</h2>;
+// };
+
+// export default ResetPassword;
+
+// // DeleteAccount.js
+// import React from "react";
+
+// const DeleteAccount = () => {
+//   return <h2>Delete Account Component (To be implemented)</h2>;
+// };
+
+// export default DeleteAccount;
+
+// // UserPosts.js
+// import React from "react";
+
+// const UserPosts = ({ userId }) => {
+//   return <h2>User Posts Component for user {userId} (To be implemented)</h2>;
+// };
+
+// export default UserPosts;

@@ -1,28 +1,39 @@
-import React from "react";
-import { Form, FormControl, Button } from "react-bootstrap";
+import React, { useState, useRef } from "react";
 import { Search } from "lucide-react";
+import "./../../styles/SearchNavbar.css"; // We'll create this file for custom styles
 
 const SearchNavbar = ({ onSearch }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const inputRef = useRef(null);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const searchTerm = e.target.searchTerm.value.trim();
-    if (searchTerm) {
-      onSearch(searchTerm);
+    if (searchTerm.trim()) {
+      onSearch(searchTerm.trim());
     }
   };
 
+  const handleClick = () => {
+    inputRef.current.focus();
+  };
+
   return (
-    <Form className="d-flex ml-auto" onSubmit={handleSubmit}>
-      <FormControl
-        type="text"
-        name="searchTerm"
-        placeholder="Search"
-        className="mr-sm-2"
-      />
-      <Button variant="outline-success" type="submit">
-        <Search />
-      </Button>
-    </Form>
+    <div className="search-navbar-container" onClick={handleClick}>
+      <form onSubmit={handleSubmit} className="search-form">
+        <Search className="search-icon" size={20} />
+        <input
+          ref={inputRef}
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search..."
+          className="search-input"
+        />
+        <button type="submit" className="search-button">
+          Search
+        </button>
+      </form>
+    </div>
   );
 };
 

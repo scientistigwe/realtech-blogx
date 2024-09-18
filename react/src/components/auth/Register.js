@@ -1,30 +1,21 @@
 import React, { useState } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Form,
-  Button,
-  Alert,
-  Breadcrumb,
-} from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../hooks/useAuth";
-import "../../styles/Layout.css";
-import "../../styles/Pages.css";
-import "../../styles/Global.css";
-import "../../styles/Components.css";
+import { useDispatch } from "react-redux";
+import { registerUser, loginUser } from "../../features/auth/authThunks"; // Import register and loginUser thunks
+import { toast } from "react-toastify"; // Import toast
+import "../../styles/Login.css"; // Import the same CSS file as Login
 
 const Register = () => {
   const navigate = useNavigate();
-  const { createUser: register, createJwt: login, loading, error } = useAuth();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
-  const [formError, setFormError] = useState(null);
+  const [formError, setFormError] = useState("");
+  const [loading, setLoading] = useState(false); // Track loading state
 
   const handleChange = (e) => {
     setFormData((prevData) => ({
@@ -35,109 +26,103 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError(null);
+    setFormError("");
+    setLoading(true); // Set loading state to true
 
     const { username, email, password, confirmPassword } = formData;
 
     // Basic validation
     if (!username || !email || !password || !confirmPassword) {
       setFormError("All fields are required.");
+      toast.error("All fields are required."); // Show toast error
+      setLoading(false); // Set loading state to false
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setFormError("Passwords do not match.");
+      toast.error("Passwords do not match."); // Show toast error
+      setLoading(false); // Set loading state to false
       return;
     }
 
     try {
-      await register({
-        username,
-        email,
-        password,
-        re_password: confirmPassword,
-      });
+      // Dispatch the register thunk
+      const registerResult = await dispatch(
+        registerUser({
+          username,
+          email,
+          password,
+          re_password: confirmPassword,
+        }) // Added re_password
+      );
 
-      const loginResult = await login(username, password);
-      if (loginResult.detail === "Login successful") {
-        setFormError(null);
-        navigate("/dashboard");
+      if (registerResult.meta.requestStatus === "fulfilled") {
+        // After successful registration, log in the user
+        const loginResult = await dispatch(loginUser({ username, password }));
+        if (loginResult.meta.requestStatus === "fulfilled") {
+          toast.success("Registration successful!"); // Show toast success
+          navigate("/dashboard");
+        } else {
+          throw new Error("Login failed after registration");
+        }
       } else {
-        throw new Error("Login failed after registration");
+        throw new Error("Registration failed");
       }
     } catch (err) {
       setFormError(err.message || "Failed to register. Please try again.");
+      toast.error(err.message || "Failed to register. Please try again."); // Show toast error
+    } finally {
+      setLoading(false); // Set loading state to false
     }
   };
 
   return (
-    <Container className="mt-5">
-      <Breadcrumb>
-        <Breadcrumb.Item href="/">Home</Breadcrumb.Item>
-        <Breadcrumb.Item active>Register</Breadcrumb.Item>
-      </Breadcrumb>
-
-      <Row className="justify-content-center">
-        <Col md={6} lg={4}>
-          <h2 className="text-center mb-4">Register</h2>
-
-          {formError && <Alert variant="danger">{formError}</Alert>}
-          {error && !formError && (
-            <Alert variant="danger">An error occurred. Please try again.</Alert>
-          )}
-
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Username</Form.Label>
-              <Form.Control
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                placeholder="Enter username"
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Enter email"
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Enter password"
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Confirm Password</Form.Label>
-              <Form.Control
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Confirm password"
-              />
-            </Form.Group>
-
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={loading}
-              className="w-100"
-            >
-              {loading ? "Registering..." : "Register"}
-            </Button>
-          </Form>
-        </Col>
-      </Row>
-    </Container>
+    <div className="login-container">
+      {/* Use the same container class as Login */}
+      <div className="login-form">
+        {/* Use the same form class as Login */}
+        <h1>Register</h1>
+        {formError && <p>{formError}</p>}
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Username"
+            required
+          />
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Email"
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Password"
+            required
+          />
+          <input
+            type="password"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Confirm Password"
+            required
+          />
+          <button type="submit" disabled={loading}>
+            {loading ? "Registering..." : "Register"}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 };
 

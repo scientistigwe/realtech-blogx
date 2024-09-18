@@ -1,14 +1,19 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Header from "./components/common/Header";
+
 import Footer from "./components/common/Footer";
 import HomePage from "./pages/HomePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import SearchNavbar from "./components/common/SearchNavbar";
+import Dashboard from "./components/analytics/Dashboard";
 
 // Authentication
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
+
+// Users & Authors
+import UserProfile from "./components/profile/UserProfile";
 
 // Posts
 import PostList from "./components/posts/PostList";
@@ -28,6 +33,8 @@ function App() {
         {/* Authentication Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<UserProfile />} />
 
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />

@@ -1,5 +1,9 @@
 import React from "react";
 import PropTypes from "prop-types";
+import "../../styles/Layout.css";
+import "../../styles/Pages.css";
+import "../../styles/Global.css";
+import "../../styles/Components.css";
 
 const Footer = () => {
   return (
@@ -31,14 +35,12 @@ const Footer = () => {
             </li>
           </ul>
         </div>
-
-        {/* Footer Bottom */}
-        <div className="footer-bottom">
-          <p className="text-center">
-            &copy; {new Date().getFullYear()} RealTech BlogX. All rights
-            reserved.
-          </p>
-        </div>
+      </div>
+      {/* Footer Bottom */}
+      <div className="footer-bottom">
+        <p className="text-center">
+          &copy; {new Date().getFullYear()} RealTech BlogX. All rights reserved.
+        </p>
       </div>
     </footer>
   );

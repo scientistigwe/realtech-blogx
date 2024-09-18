@@ -1,10 +1,30 @@
 import apiClient from "./apiClient";
 import { getCsrfToken } from "./csrf";
+import Cookies from "js-cookie";
 
 // Helper function to refresh the token
 const refreshToken = async () => {
   try {
-    await apiClient.post("/auth/token/refresh/");
+    const response = await apiClient.post(
+      "/auth/token/refresh/",
+      {},
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.status !== 200) {
+      throw new Error(`Token refresh failed with status ${response.status}`);
+    }
+
+    const newToken = response.data.token;
+    Cookies.set("token", newToken, {
+      expires: 1,
+      secure: true,
+      sameSite: "Strict",
+    });
     console.log("Token refreshed successfully");
   } catch (error) {
     console.error("Failed to refresh token:", error);

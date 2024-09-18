@@ -43,7 +43,7 @@ export const useAuth = () => {
           updateState({ user: userProfile, isAuthenticated: true });
           return userProfile;
         } catch (error) {
-          throw error; // Let component handle errors
+          throw error;
         }
       },
 
