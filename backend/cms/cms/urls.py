@@ -1,54 +1,63 @@
-from django.urls import path, include, re_path
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from . import views
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
-from rest_framework import permissions
-from rest_framework_simplejwt.views import TokenRefreshView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
-schema_view = get_schema_view(
-   openapi.Info(
-      title="RealTech BlogX API",
-      default_version='v1',
-      description="API documentation for RealTech BlogX project.",
-      terms_of_service="https://www.insitechinternational.com/terms/",
-      contact=openapi.Contact(email="contact@realtechblogx.local"),
-      license=openapi.License(name="BSD License"),
-   ),
-   public=True,
-   permission_classes=(permissions.AllowAny,),
+from rest_framework_simplejwt.views import TokenVerifyView
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from .views import (
+    CustomTokenObtainPairView,
+    CustomTokenRefreshView,
+    CustomUserViewSet,
+    CategoryViewSet,
+    TagViewSet,
+    PostViewSet,
+    CommentViewSet,
+    NotificationViewSet
 )
 
 router = DefaultRouter()
-router.register(r'authors', views.CustomUserViewSet, basename='author')  # Route for authors
-router.register(r'users', views.CustomUserViewSet, basename='user')
-router.register(r'categories', views.CategoryViewSet, basename='category')
-router.register(r'tags', views.TagViewSet, basename='tag')
-router.register(r'posts', views.PostViewSet, basename='post')
-router.register(r'comments', views.CommentViewSet, basename='comment')
-router.register(r'notifications', views.NotificationViewSet, basename='notification')
+router.register(r'users', CustomUserViewSet)
+router.register(r'categories', CategoryViewSet)
+router.register(r'tags', TagViewSet)
+router.register(r'posts', PostViewSet)
+router.register(r'comments', CommentViewSet)
+router.register(r'notifications', NotificationViewSet)
 
 urlpatterns = [
+    # JWT Authentication endpoints
+    path('auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
+    path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('auth/token/check_auth/', CustomTokenObtainPairView.as_view(), name='check_auth'),
+    path('auth/token/logout/', CustomTokenObtainPairView.as_view(), name='token_logout'),
+
+    # API documentation endpoints
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    
+    # Include all router-generated URLs
     path('cms-api/v1/', include(router.urls)),
-    # Custom actions
-    path('auth/token/', views.CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('auth/token/refresh/', views.CustomTokenRefreshView.as_view(), name='token_refresh'),
-    path('auth/check-auth/', views.check_auth, name='check_auth'),
-    path('auth/logout/', views.logout_view, name='logout'),
-    path('cms-api/v1/authors/<int:pk>/contact/', views.CustomUserViewSet.as_view({'post': 'contact'}), name='author-contact'),
-    path('cms-api/v1/posts/<int:pk>/upvote/', views.PostViewSet.as_view({'post': 'upvote'}), name='post-upvote'),
-    path('cms-api/v1/posts/<int:pk>/downvote/', views.PostViewSet.as_view({'post': 'downvote'}), name='post-downvote'),
-    path('cms-api/v1/posts/most-viewed/', views.PostViewSet.as_view({'get': 'most_viewed'}), name='post-most-viewed'),
-    path('cms-api/v1/posts/<int:pk>/view/', views.PostViewSet.as_view({'get': 'view'}), name='post-view'),
-    path('cms-api/v1/posts/featured/', views.PostViewSet.as_view({'get': 'featured'}), name='post-featured'),
-    path('cms-api/v1/comments/<int:pk>/upvote/', views.CommentViewSet.as_view({'post': 'upvote'}), name='comment-upvote'),
-    path('cms-api/v1/comments/<int:pk>/downvote/', views.CommentViewSet.as_view({'post': 'downvote'}), name='comment-downvote'),
-    path('cms-api/v1/comments/<int:pk>/moderate/', views.CommentViewSet.as_view({'post': 'moderate'}), name='comment-moderate'),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
-    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
 
+# Custom action URLs
+urlpatterns += [
+    path('cms-api/v1/users/me/', CustomUserViewSet.as_view({'get': 'me'}), name='user-me'),
+    path('cms-api/v1/categories/<int:pk>/subcategories/', CategoryViewSet.as_view({'get': 'subcategories'}), name='category-subcategories'),
+    path('cms-api/v1/tags/most_used/', TagViewSet.as_view({'get': 'most_used'}), name='tag-most-used'),
+    path('cms-api/v1/posts/most_viewed/', PostViewSet.as_view({'get': 'most_viewed'}), name='post-most-viewed'),
+    path('cms-api/v1/posts/featured/', PostViewSet.as_view({'get': 'featured'}), name='post-featured'),
+    path('cms-api/v1/posts/check_slug/', PostViewSet.as_view({'post': 'check_slug'}), name='post-check-slug'),
+    path('cms-api/v1/posts/analytics/', PostViewSet.as_view({'post': 'analytics'}), name='post-analytics'),
+    path('cms-api/v1/posts/by_category/', PostViewSet.as_view({'get': 'posts_by_category'}), name='posts-by-category'),
+    path('cms-api/v1/posts/by_tag/', PostViewSet.as_view({'get': 'posts_by_tag'}), name='posts-by-tag'),
+    path('cms-api/v1/posts/by_author/', PostViewSet.as_view({'get': 'posts_by_author'}), name='posts-by-author'),
+    path('cms-api/v1/posts/by_date_range/', PostViewSet.as_view({'get': 'posts_by_date_range'}), name='posts-by-date-range'),
+    path('cms-api/v1/posts/<int:pk>/publish/', PostViewSet.as_view({'post': 'publish'}), name='post-publish'),
+    path('cms-api/v1/posts/<int:pk>/upvote/', PostViewSet.as_view({'post': 'upvote'}), name='post-upvote'),
+    path('cms-api/v1/posts/<int:pk>/downvote/', PostViewSet.as_view({'post': 'downvote'}), name='post-downvote'),
+    path('cms-api/v1/comments/<int:pk>/approve/', CommentViewSet.as_view({'post': 'approve'}), name='comment-approve'),
+    path('cms-api/v1/comments/<int:pk>/reject/', CommentViewSet.as_view({'post': 'reject'}), name='comment-reject'),
+    path('comments/for-post/', CommentViewSet.as_view({'get': 'for_post'}), name='comments_for_post'),
+    path('notifications/unread/', NotificationViewSet.as_view({'get': 'unread'}), name='unread_notifications'),
+    path('cms-api/v1/notifications/<int:pk>/mark_as_read/', NotificationViewSet.as_view({'post': 'mark_as_read'}), name='notification-mark-as-read'),
+    path('cms-api/v1/notifications/mark_all_as_read/', NotificationViewSet.as_view({'post': 'mark_all_as_read'}), name='notification-mark-all-as-read'),
+]

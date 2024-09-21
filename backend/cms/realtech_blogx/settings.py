@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'djoser',
     'cms',  # Ensure 'cms' is correctly installed and available
     'drf_yasg',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -112,6 +113,12 @@ REST_FRAMEWORK = {
         'user': '1000/hour',
         'anon': '100/minute',
     },
+
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',  # Only use JSONRenderer
+    ),
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
     'DEFAULT_VERSION': 'v1',
     'ALLOWED_VERSIONS': ['v1'],
@@ -268,4 +275,57 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
+SPECTACULAR_SETTINGS = {
+    'VERSION': '1.0.0',
+    'TITLE': 'RealTech BlogX',
+    'DESCRIPTION': 'Your project description',
+
+    # Update SERVERS to allow multiple server entries
+    'SERVERS': [
+        {
+            'url': 'http://localhost:8000',
+            'description': 'Local development server'
+        },
+        # Add other environments like production if needed
+        # {'url': 'https://api.yourproductionurl.com', 'description': 'Production server'},
+    ],
+
+    # Schema path (relative to base URL)
+    'SCHEMA_PATH': '/schema/',  # This will serve the OpenAPI schema in JSON format
+
+    # OpenAPI version to use
+    'OPENAPI_VERSION': '3.0.2',
+
+    # Generated schema file path
+    'GENERATE_SCHEMA_PATH': 'schema.json',
+
+    # Filter operators and field name for queries
+    'DEFAULT_FILTER_OPERATORS': ['iexact', 'contains', 'in', 'range', 'gt', 'lt', 'gte', 'lte'],
+    'DEFAULT_FILTER_FIELD_NAME': 'filter',
+
+    # Tags for grouping endpoints in the documentation
+    'TAGS': [
+        {
+            'name': 'Auth',
+            'description': 'Authentication related endpoints'
+        },
+        {
+            'name': 'Users',
+            'description': 'CRUD operations for users'
+        },
+        {
+            'name': 'Posts',
+            'description': 'Endpoints for managing blog posts'
+        },
+        {
+            'name': 'Comments',
+            'description': 'Endpoints for managing comments'
+        },
+        {
+            'name': 'Notifications',
+            'description': 'Endpoints for handling notifications'
+        },
+    ],
+}
 

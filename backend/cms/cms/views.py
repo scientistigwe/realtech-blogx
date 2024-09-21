@@ -1,173 +1,170 @@
-from rest_framework.filters import SearchFilter, OrderingFilter
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
-from django.http import JsonResponse
-from .models import CustomUser, Category, Tag, Post, Comment, Notification
-from .serializers import CustomUserSerializer, CategorySerializer, TagSerializer, PostSerializer, CommentSerializer, NotificationSerializer
-from .permissions.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly, DynamicJwtPermission
-from .pagination import StandardResultsSetPagination
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from django.db.models import Q, Sum, Count
-from django.middleware import csrf
-from django.conf import settings
 from django.utils import timezone
+from django.contrib.auth import get_user_model
+from .models import CustomUser, Category, Tag, Post, Comment, Notification
+from .serializers import (
+    CustomUserSerializer, CategorySerializer, TagSerializer,
+    PostSerializer, CommentSerializer, NotificationSerializer
+)
+from cms.permissions.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly, DynamicJwtPermission
+from .pagination import StandardResultsSetPagination
 
-# Custom Token Obtain Pair View
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+User = get_user_model()
+
+class BaseModelViewSet(viewsets.ModelViewSet):
+    permission_classes = [DynamicJwtPermission]
+    pagination_class = StandardResultsSetPagination
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
 
 class CustomTokenObtainPairView(TokenObtainPairView):
+    @extend_schema(
+        summary="Obtain JWT token pair",
+        description="Authenticate user and return JWT token pair along with user data",
+        responses={200: {
+            "type": "object",
+            "properties": {
+                "access": {"type": "string"},
+                "refresh": {"type": "string"},
+                "user": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "integer"},
+                        "username": {"type": "string"},
+                        "email": {"type": "string"},
+                        "is_authenticated": {"type": "boolean"}
+                    }
+                }
+            }
+        }}
+    )
     def post(self, request, *args, **kwargs):
-        # Instantiate the serializer with request data
-        serializer = TokenObtainPairSerializer(data=request.data)
-        
-        # Validate the serializer
-        try:
-            serializer.is_valid(raise_exception=True)
-        except Exception as e:
-            return JsonResponse({"message": str(e)}, status=400)
-
-        # At this point, the user is authenticated and can be accessed
-        user = serializer.user
-
-        # Call the parent's post method to generate the response
         response = super().post(request, *args, **kwargs)
-
         if response.status_code == 200:
-            # Set CSRF token and access/refresh token cookies
-            csrf.get_token(request)
-            response.set_cookie(
-                'access_token',
-                response.data['access'],
-                httponly=True,
-                secure=not settings.DEBUG,
-                samesite='Lax' if settings.DEBUG else 'Strict',
-                max_age=3600  # 1 hour
-            )
-            response.set_cookie(
-                'refresh_token',
-                response.data['refresh'],
-                httponly=True,
-                samesite='Lax'
-            )
+            user_data = self.get_user_from_token(response.data['access'])
+            if user_data:
+                response.data.update({
+                    "message": "Login successful",
+                    "user": user_data
+                })
+        return response
 
-            # Construct user data for response
-            user_data = {
+    def get_user_from_token(self, access_token):
+        try:
+            token = AccessToken(access_token)
+            user_id = token['user_id']
+            user = User.objects.get(id=user_id)
+            return {
                 'id': user.id,
                 'username': user.username,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
                 'email': user.email,
-                'bio': user.bio,
-                'website': user.website,
-                'location': user.location,
-                'profile_picture': user.profile_picture.url if user.profile_picture else None,
-                'social_profiles': user.social_profiles,
-                'last_active': user.last_active,
-                'is_author': user.is_author,
-                'role': user.role,
                 'is_superuser': user.is_superuser,
                 'is_staff': user.is_staff,
                 'is_active': user.is_active,
-                'last_login': user.last_login,
-                'date_joined': user.date_joined,
-                'created_at': user.created_at,
-                'updated_at': user.updated_at,
+                'is_authenticated': True
             }
+        except Exception:
+            return None
 
-            # Return the response with user data
-            return JsonResponse({
-                "message": "Login successful",
-                "access": response.data['access'],
-                "refresh": response.data['refresh'],
-                "user": user_data
-            }, status=200)
-
-        # If something goes wrong, return the original response
-        return response
-
-# Custom Token Refresh View
 class CustomTokenRefreshView(TokenRefreshView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        summary="Refresh JWT token",
+        description="Refresh JWT access token using refresh token",
+        responses={200: {
+            "type": "object",
+            "properties": {
+                "access": {"type": "string"}
+            }
+        }}
+    )
     def post(self, request, *args, **kwargs):
-        refresh_token = request.COOKIES.get('refresh_token')
-        if not refresh_token:
-            return Response({'detail': 'No refresh token found'}, status=status.HTTP_400_BAD_REQUEST)
+        return super().post(request, *args, **kwargs)
 
-        request.data['refresh'] = refresh_token
-        response = super().post(request, *args, **kwargs)
-
-        access_token = response.data.get('access')
-        if access_token:
-            response.set_cookie(
-                key='access_token',
-                value=access_token,
-                httponly=True,
-                secure=True,
-                samesite='Strict',
-                max_age=3600
-            )
-        response.data = {'detail': 'Token refresh successful'}
-        return response
-
-# Check if user is authenticated
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def check_auth(request):
-    if request.user.is_authenticated:
-        return Response({'is_authenticated': True, 'username': request.user.username})
-    return Response({'is_authenticated': False}, status=status.HTTP_200_OK)
-
-# Custom User ViewSet for User Management
-class CustomUserViewSet(viewsets.ModelViewSet):
+class CustomUserViewSet(BaseModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
-    permission_classes = [DynamicJwtPermission]
 
-    @action(detail=False, methods=['get'])
+    @extend_schema(
+        summary="Get current user",
+        description="Retrieve information about the current authenticated user",
+        responses={200: CustomUserSerializer}
+    )
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        fields = ['username', 'first_name', 'last_name', 'bio', 'website', 'location', 'profile_picture'] \
-            if not request.user.is_authenticated else None
-        serializer = self.get_serializer(instance, fields=fields)
-        return Response(serializer.data)
+    @extend_schema(
+        summary="Check authentication status",
+        description="Check if the current user is authenticated",
+        responses={200: {
+            "type": "object",
+            "properties": {
+                "is_authenticated": {"type": "boolean"},
+                "user": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "integer"},
+                        "username": {"type": "string"},
+                        "email": {"type": "string"}
+                    }
+                }
+            }
+        }}
+    )
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def check_auth(self, request):
+        if request.user.is_authenticated:
+            user_data = {
+                'id': request.user.id,
+                'username': request.user.username,
+                'email': request.user.email,
+            }
+            return Response({
+                'is_authenticated': True,
+                'user': user_data
+            })
+        return Response({'is_authenticated': False})
 
-# Logout View
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def logout_view(request):
-    response = Response({'detail': 'Successfully logged out.'})
-    response.delete_cookie('access_token')
-    response.delete_cookie('refresh_token')
-    return response
+    @extend_schema(
+        summary="Logout user",
+        description="Blacklist the user's refresh token to logout",
+        responses={200: {
+            "type": "object",
+            "properties": {
+                "detail": {"type": "string"}
+            }
+        }}
+    )
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def logout(self, request):
+        try:
+            refresh_token = request.data.get('refresh_token')
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"detail": "Logout successful."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(BaseModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [DynamicJwtPermission]
 
-    def get_permissions(self):
-        if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
-            return [permissions.IsAuthenticated()]
-        return [permissions.AllowAny()]
-
-    @swagger_auto_schema(
-        method='get',
-        operation_description="Get all subcategories for a given category",
-        responses={200: CategorySerializer(many=True)}
-    )
     @action(detail=True, methods=['get'])
     def subcategories(self, request, pk=None):
         category = self.get_object()
@@ -175,39 +172,38 @@ class CategoryViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(subcategories, many=True)
         return Response(serializer.data)
 
-class TagViewSet(viewsets.ModelViewSet):
+class TagViewSet(BaseModelViewSet):
     queryset = Tag.objects.all().order_by('id')
     serializer_class = TagSerializer
-    permission_classes = [DynamicJwtPermission]
-    pagination_class = StandardResultsSetPagination
 
-    def get_permissions(self):
-        if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
-            return [permissions.IsAuthenticated()]
-        return [permissions.AllowAny()]
-
-    @swagger_auto_schema(
-        method='get',
-        operation_description="Get most used tags",
-        manual_parameters=[openapi.Parameter('limit', openapi.IN_QUERY, description="Number of tags to retrieve", type=openapi.TYPE_INTEGER)],
-        responses={200: TagSerializer(many=True)}
-    )
     @action(detail=False, methods=['get'])
     def most_used(self, request):
         limit = int(request.query_params.get('limit', 10))
         tags = Tag.objects.annotate(post_count=Count('posts')).order_by('-post_count')[:limit]
         serializer = self.get_serializer(tags, many=True)
         return Response(serializer.data)
-    
-class PostViewSet(viewsets.ModelViewSet):
+
+class PostViewSet(BaseModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [DynamicJwtPermission, IsAdminOrReadOnly]
-    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['status', 'category', 'tags', 'publication_date', 'author']
     search_fields = ['title', 'content']
     ordering_fields = ['view_count', 'created_at', 'upvotes']
+
+    @extend_schema(
+        summary="List posts",
+        description="Retrieve a list of posts with optional filtering",
+        parameters=[
+            OpenApiParameter(name="category", description="Filter by category slug", type=OpenApiTypes.STR),
+            OpenApiParameter(name="tag", description="Filter by tag slug", type=OpenApiTypes.STR),
+            OpenApiParameter(name="search", description="Search in title and content", type=OpenApiTypes.STR),
+            OpenApiParameter(name="is_public", description="Filter by public status", type=OpenApiTypes.BOOL),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -225,53 +221,31 @@ class PostViewSet(viewsets.ModelViewSet):
         if is_public is not None:
             queryset = queryset.filter(is_public=is_public)
 
-        if self.request.user.is_authenticated:
-            if self.request.user.is_author:
-                return queryset.filter(Q(is_public=True) | Q(author=self.request.user))
+        if self.request.user.is_authenticated and self.request.user.is_author:
+            return queryset.filter(Q(is_public=True) | Q(author=self.request.user))
         return queryset.filter(is_public=True)
 
-    @swagger_auto_schema(
-        method='post',
-        operation_description="Upvote a post",
-        responses={200: openapi.Response('Upvote successful'), 400: 'Bad request'}
-    )
     @action(detail=True, methods=['post'])
     def upvote(self, request, pk=None):
         post = self.get_object()
         post.upvotes += 1
         post.save()
-        return Response({'status': 'Post upvoted successfully'}, status=status.HTTP_200_OK)
+        return Response({'status': 'Post upvoted successfully'})
 
-    @swagger_auto_schema(
-        method='post',
-        operation_description="Downvote a post",
-        responses={200: openapi.Response('Downvote successful'), 400: 'Bad request'}
-    )
     @action(detail=True, methods=['post'])
     def downvote(self, request, pk=None):
         post = self.get_object()
         post.downvotes += 1
         post.save()
-        return Response({'status': 'Post downvoted successfully'}, status=status.HTTP_200_OK)
+        return Response({'status': 'Post downvoted successfully'})
 
-    @swagger_auto_schema(
-        method='get',
-        operation_description="List the most viewed posts",
-        manual_parameters=[openapi.Parameter('limit', openapi.IN_QUERY, description="Number of posts to retrieve", type=openapi.TYPE_INTEGER)],
-        responses={200: PostSerializer(many=True)}
-    )
-    @action(detail=False, methods=['get'], url_path='most-viewed')
+    @action(detail=False, methods=['get'])
     def most_viewed(self, request):
-        limit = request.query_params.get('limit', 10)
-        most_viewed = self.get_queryset().order_by('-view_count')[:int(limit)]
+        limit = int(request.query_params.get('limit', 10))
+        most_viewed = self.get_queryset().order_by('-view_count')[:limit]
         serializer = self.get_serializer(most_viewed, many=True)
         return Response(serializer.data)
 
-    @swagger_auto_schema(
-        method='get',
-        operation_description="Increment post view count.",
-        responses={200: PostSerializer()}
-    )
     @action(detail=True, methods=['get'])
     def view(self, request, pk=None):
         post = self.get_object()
@@ -280,161 +254,67 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(post)
         return Response(serializer.data)
 
-    @swagger_auto_schema(
-        method='get',
-        operation_description="Get featured posts based on upvotes or view count.",
-        responses={200: PostSerializer(many=True)}
-    )
     @action(detail=False, methods=['get'])
     def featured(self, request):
         queryset = Post.objects.filter(status='published').order_by('-upvotes', '-view_count')[:5]
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @swagger_auto_schema(
-        method='post',
-        operation_description="Check if a post slug is unique.",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={'slug': openapi.Schema(type=openapi.TYPE_STRING)},
-            required=['slug']
-        ),
-        responses={200: 'Slug is available', 400: 'Slug already exists'}
-    )
     @action(detail=False, methods=['post'])
     def check_slug(self, request):
         slug = request.data.get('slug')
         if Post.objects.filter(slug=slug).exists():
             return Response({'detail': 'Slug already exists'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'detail': 'Slug is available'}, status=status.HTTP_200_OK)
+        return Response({'detail': 'Slug is available'})
 
-    @swagger_auto_schema(
-        method='post',
-        operation_description="Get analytics data for posts.",
-        responses={200: openapi.Schema(type=openapi.TYPE_OBJECT, properties={'total_posts': openapi.Schema(type=openapi.TYPE_INTEGER), 'total_views': openapi.Schema(type=openapi.TYPE_INTEGER)})}
-    )
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['get'])
     def analytics(self, request):
         total_posts = Post.objects.count()
         total_views = Post.objects.aggregate(Sum('view_count'))['view_count__sum'] or 0
-        return Response({'total_posts': total_posts, 'total_views': total_views}, status=status.HTTP_200_OK)
+        return Response({'total_posts': total_posts, 'total_views': total_views})
 
-    @swagger_auto_schema(
-        method='get',
-        operation_description="Get posts by category",
-        manual_parameters=[
-            openapi.Parameter('slug', openapi.IN_QUERY, description="Category slug", type=openapi.TYPE_STRING),
-            openapi.Parameter('category', openapi.IN_QUERY, description="Category ID or slug", type=openapi.TYPE_STRING),
-        ],
-        responses={200: PostSerializer(many=True)}
-    )
-    @action(detail=False, methods=['get'], url_path='by-category')
+    @action(detail=False, methods=['get'])
     def posts_by_category(self, request):
-        category_slug = request.query_params.get('slug') or request.query_params.get('category')
+        category_slug = request.query_params.get('slug')
         if not category_slug:
-            return Response({'error': 'Category slug or ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            # First, try to filter by slug
-            posts = self.get_queryset().filter(category__slug=category_slug)
-            if not posts.exists():
-                # If no posts found, try to filter by ID
-                category_id = int(category_slug)
-                posts = self.get_queryset().filter(category__id=category_id)
-        except ValueError:
-            # If category_slug is not a valid integer, just use the slug filter
-            pass
+            return Response({'error': 'Category slug is required'}, status=status.HTTP_400_BAD_REQUEST)
+        posts = self.get_queryset().filter(category__slug=category_slug)
+        return self.get_paginated_response(self.get_serializer(posts, many=True).data)
 
-        page = self.paginate_queryset(posts)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        
-        serializer = self.get_serializer(posts, many=True)
-        return Response(serializer.data)
-
-    @swagger_auto_schema(
-        method='get',
-        operation_description="Get posts by tag",
-        manual_parameters=[
-            openapi.Parameter('slug', openapi.IN_QUERY, description="Tag slug", type=openapi.TYPE_STRING, required=True),
-        ],
-        responses={200: PostSerializer(many=True)}
-    )
-    @action(detail=False, methods=['get'], url_path='by-tag')
+    @action(detail=False, methods=['get'])
     def posts_by_tag(self, request):
         tag_slug = request.query_params.get('slug')
         if not tag_slug:
             return Response({'error': 'Tag slug is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
         posts = self.get_queryset().filter(tags__slug=tag_slug)
-        page = self.paginate_queryset(posts)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        
-        serializer = self.get_serializer(posts, many=True)
-        return Response(serializer.data)
+        return self.get_paginated_response(self.get_serializer(posts, many=True).data)
 
-    @swagger_auto_schema(
-        method='get',
-        operation_description="Get posts by author",
-        manual_parameters=[
-            openapi.Parameter('username', openapi.IN_QUERY, description="Author's username", type=openapi.TYPE_STRING, required=True),
-        ],
-        responses={200: PostSerializer(many=True)}
-    )
-    @action(detail=False, methods=['get'], url_path='by-author')
+    @action(detail=False, methods=['get'])
     def posts_by_author(self, request):
         username = request.query_params.get('username')
         if not username:
             return Response({'error': 'Author username is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
         posts = self.get_queryset().filter(author__username=username)
-        page = self.paginate_queryset(posts)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        
-        serializer = self.get_serializer(posts, many=True)
-        return Response(serializer.data)
+        return self.get_paginated_response(self.get_serializer(posts, many=True).data)
 
-    @swagger_auto_schema(
-        method='get',
-        operation_description="Get posts by date range",
-        manual_parameters=[
-            openapi.Parameter('start_date', openapi.IN_QUERY, description="Start date (YYYY-MM-DD)", type=openapi.TYPE_STRING, required=True),
-            openapi.Parameter('end_date', openapi.IN_QUERY, description="End date (YYYY-MM-DD)", type=openapi.TYPE_STRING, required=True),
-        ],
-        responses={200: PostSerializer(many=True)}
-    )
-    @action(detail=False, methods=['get'], url_path='by-date-range')
+    @action(detail=False, methods=['get'])
     def posts_by_date_range(self, request):
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
-        
         if not start_date or not end_date:
             return Response({'error': 'Both start_date and end_date are required'}, status=status.HTTP_400_BAD_REQUEST)
-        
         try:
             posts = self.get_queryset().filter(publication_date__range=[start_date, end_date])
         except ValueError:
             return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        page = self.paginate_queryset(posts)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        
-        serializer = self.get_serializer(posts, many=True)
-        return Response(serializer.data)
+        return self.get_paginated_response(self.get_serializer(posts, many=True).data)
 
-    @swagger_auto_schema(
-        method='post',
-        operation_description="Publish a draft post.",
-        responses={200: PostSerializer(), 400: 'Bad request'}
+    @extend_schema(
+        summary="Publish post",
+        description="Publish a draft post",
+        responses={200: PostSerializer, 400: OpenApiTypes.OBJECT}
     )
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def publish(self, request, pk=None):
         post = self.get_object()
         if post.status == 'draft':
@@ -445,21 +325,13 @@ class PostViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         return Response({'detail': 'Post is already published'}, status=status.HTTP_400_BAD_REQUEST)
 
-class CommentViewSet(viewsets.ModelViewSet):
+# ... (previous code remains the same)
+
+class CommentViewSet(BaseModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [DynamicJwtPermission, IsOwnerOrReadOnly]
 
-    def get_permissions(self):
-        if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
-            return [permissions.IsAuthenticated()]
-        return [permissions.AllowAny()]
-
-    @swagger_auto_schema(
-        method='post',
-        operation_description="Approve a comment",
-        responses={200: CommentSerializer(), 400: 'Bad request'}
-    )
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         comment = self.get_object()
@@ -468,11 +340,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(comment)
         return Response(serializer.data)
 
-    @swagger_auto_schema(
-        method='post',
-        operation_description="Reject a comment",
-        responses={200: CommentSerializer(), 400: 'Bad request'}
-    )
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         comment = self.get_object()
@@ -480,23 +347,30 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment.save()
         serializer = self.get_serializer(comment)
         return Response(serializer.data)
-    
-class NotificationViewSet(viewsets.ModelViewSet):
+
+    @extend_schema(
+        summary="List comments for a post",
+        description="Retrieve a list of comments for a specific post",
+        parameters=[
+            OpenApiParameter(name="post_id", description="ID of the post", required=True, type=OpenApiTypes.INT),
+        ]
+    )
+    @action(detail=False, methods=['get'])
+    def for_post(self, request):
+        post_id = request.query_params.get('post_id')
+        if not post_id:
+            return Response({'error': 'post_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        comments = self.get_queryset().filter(post_id=post_id)
+        serializer = self.get_serializer(comments, many=True)
+        return Response(serializer.data)
+
+class NotificationViewSet(BaseModelViewSet):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
-    permission_classes = [DynamicJwtPermission]
-    pagination_class = StandardResultsSetPagination
+    permission_classes = [IsAuthenticated]
 
-    def get_permissions(self):
-        if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
-            return [permissions.IsAuthenticated()]
-        return [permissions.AllowAny()]
-
-    @swagger_auto_schema(
-        method='post',
-        operation_description="Mark a notification as read",
-        responses={200: NotificationSerializer(), 400: 'Bad request'}
-    )
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
 
     @action(detail=True, methods=['post'])
     def mark_as_read(self, request, pk=None):
@@ -506,13 +380,17 @@ class NotificationViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(notification)
         return Response(serializer.data)
 
-    @swagger_auto_schema(
-        method='post',
-        operation_description="Mark all notifications as read",
-        responses={200: 'All notifications marked as read'}
-    )
-
     @action(detail=False, methods=['post'])
     def mark_all_as_read(self, request):
         self.get_queryset().update(is_read=True)
-        return Response({'detail': 'All notifications marked as read'}, status=status.HTTP_200_OK)
+        return Response({'detail': 'All notifications marked as read'})
+
+    @extend_schema(
+        summary="List unread notifications",
+        description="Retrieve a list of unread notifications for the current user"
+    )
+    @action(detail=False, methods=['get'])
+    def unread(self, request):
+        unread_notifications = self.get_queryset().filter(is_read=False)
+        serializer = self.get_serializer(unread_notifications, many=True)
+        return Response(serializer.data)
