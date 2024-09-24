@@ -111,7 +111,6 @@ export const fetchMostViewedPosts = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await postService.fetchMostViewedPosts();
-      console.log(`Most viewed posts from postsThunk: ${response}`);
       return response;
     } catch (error) {
       return rejectWithValue(error.message);

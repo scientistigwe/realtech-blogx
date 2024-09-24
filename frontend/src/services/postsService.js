@@ -115,9 +115,6 @@ export const postService = {
   async fetchMostViewedPosts() {
     try {
       const response = await api.posts.mostViewed();
-      console.log(
-        `Most viewed posts from service: ${JSON.stringify(response)}`
-      );
       return response;
     } catch (error) {
       console.error("Error fetching most viewed posts:", error);

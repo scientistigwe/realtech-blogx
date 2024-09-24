@@ -1,26 +1,34 @@
 /* HeroCarousel.css */
 
+/* General Carousel Styles */
 .hero-carousel {
   max-height: 600px;
   overflow: hidden;
   margin-bottom: 2rem;
 }
 
-.carousel-inner {
-  height: 100%;
+.hero-carousel .carousel-item {
+  height: 400px;
 }
 
-.carousel-item {
-  height: 100%;
+.carousel-control-prev,
+.carousel-control-next {
+  width: 5%;
 }
 
+.carousel-indicators {
+  bottom: 0;
+}
+
+/* Slide and Content Styles */
 .welcome-slide,
-.hero-slide {
+.hero-slide,
+.hero-card {
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f8f9fa;
+  color: #333;
 }
 
 .welcome-content,
@@ -28,25 +36,27 @@
   max-width: 1200px;
   width: 100%;
   padding: 2rem;
-  background-color: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.welcome-content h1 {
+.welcome-content h1,
+.hero-content h2 {
   font-size: 2.5rem;
   margin-bottom: 1rem;
 }
 
-.welcome-content p {
+.welcome-content p,
+.excerpt {
   font-size: 1.25rem;
   margin-bottom: 1.5rem;
+  color: #666;
 }
 
+/* Hero Card Specific Styles */
 .hero-card {
-  display: flex;
   flex-direction: row;
-  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .hero-image {
@@ -66,17 +76,12 @@
   flex: 1;
 }
 
-.hero-content h2 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-.excerpt {
-  font-size: 1rem;
-  margin-bottom: 1rem;
+.post-excerpt {
+  font-size: 0.9rem;
   color: #666;
 }
 
+/* Meta and Tag Styles */
 .post-meta {
   display: flex;
   flex-wrap: wrap;
@@ -90,22 +95,21 @@
   margin-bottom: 0.5rem;
 }
 
-.post-tags {
-  margin-bottom: 0.5rem;
-}
-
-.post-tags .badge {
+.post-tags .badge,
+.post-category .badge {
+  font-size: 0.75rem;
   margin-right: 0.25rem;
   margin-bottom: 0.25rem;
 }
 
-.post-category {
-  margin-bottom: 0.5rem;
+/* Post Stats and Vote Styles */
+.post-stats,
+.post-votes {
+  font-size: 0.8rem;
 }
 
 .post-votes {
   margin-bottom: 1rem;
-  font-size: 0.9rem;
 }
 
 .post-votes .upvotes {
@@ -117,6 +121,7 @@
   color: #dc3545;
 }
 
+/* Button Styles */
 .btn-primary,
 .btn-secondary {
   padding: 0.5rem 1rem;
@@ -124,15 +129,23 @@
   transition: background-color 0.3s ease;
 }
 
-.carousel-control-prev,
-.carousel-control-next {
-  width: 5%;
+/* Card Styling */
+.card {
+  background-color: transparent !important;
 }
 
-.carousel-indicators {
-  bottom: 0;
+.hero-card .card-img {
+  height: 100%;
+  object-fit: cover;
 }
 
+.hero-card .card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Responsive Styles */
 @media (max-width: 768px) {
   .hero-carousel {
     max-height: none;

@@ -5,10 +5,9 @@ import {
   Row,
   Col,
   Card,
-  Button,
-  Alert,
-  Spinner,
   Badge,
+  Spinner,
+  Alert,
 } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import HeroCarousel from "../components/common/HeroCarousel";
@@ -18,6 +17,7 @@ import {
   selectPostsLoading,
   selectPostsError,
 } from "../redux/post/postSlice";
+import "../styles/HomePage.css";
 
 const HomePage = () => {
   const dispatch = useDispatch();
@@ -37,7 +37,7 @@ const HomePage = () => {
     return (
       <div className="loading-spinner">
         <Spinner animation="border" role="status">
-          <span className="sr-only">Loading...</span>
+          <span className="sr-only"></span>
         </Spinner>
       </div>
     );
@@ -62,62 +62,75 @@ const HomePage = () => {
 
       <Container>
         <section className="most-viewed-posts">
-          <h2>Most Viewed Posts</h2>
+          <h2 className="section-title mb-4">Most Viewed Posts</h2>
           {remainingPosts.length > 0 ? (
             <Row>
               {remainingPosts.map((post) => (
-                <Col md={6} lg={4} key={post.id} className="mb-4">
+                <Col md={6} key={post.id} className="mb-4">
                   <Card className="post-card">
-                    <Card.Img
-                      variant="top"
-                      src={post.thumbnail || "/api/placeholder/400/300"}
-                      alt={post.title}
-                    />
-                    <Card.Body>
-                      <Card.Title>{post.title}</Card.Title>
-                      <Card.Text className="post-excerpt">
-                        {post.excerpt}
-                      </Card.Text>
-                      <div className="post-meta">
-                        <span className="author">
-                          By {post.author.first_name} {post.author.last_name}
-                        </span>
-
-                        <div className="views">
-                          No of Views: {post.view_count}
-                        </div>
-                        <span className="date">
-                          Published:{" "}
-                          {new Date(post.publication_date).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="post-tags">
-                        {post.tags.map((tag) => (
-                          <Badge
-                            key={tag.id}
-                            variant="secondary"
-                            className="mr-1"
+                    <Row noGutters>
+                      <Col md={6}>
+                        <Card.Img
+                          src={post.thumbnail || "/api/placeholder/400/300"}
+                          alt={post.title}
+                          className="h-100 object-fit-cover"
+                        />
+                      </Col>
+                      <Col md={6}>
+                        <Card.Body>
+                          <Card.Title className="h4 mb-3">
+                            {post.title}
+                          </Card.Title>
+                          <Card.Text className="post-excerpt mb-3">
+                            {post.excerpt}
+                          </Card.Text>
+                          <div className="post-meta mb-2">
+                            <small className="text-muted">
+                              By {post.author.first_name}{" "}
+                              {post.author.last_name} |
+                              {new Date(
+                                post.publication_date
+                              ).toLocaleDateString()}
+                            </small>
+                          </div>
+                          <div className="post-tags mb-2">
+                            {post.tags.map((tag) => (
+                              <Badge
+                                key={tag.id}
+                                variant="secondary"
+                                className="mr-1"
+                              >
+                                {tag.name}
+                              </Badge>
+                            ))}
+                          </div>
+                          <div className="post-category mb-2">
+                            {post.category && (
+                              <Badge variant="info">{post.category.name}</Badge>
+                            )}
+                          </div>
+                          <div className="post-stats d-flex justify-content-between align-items-center">
+                            <div className="views">
+                              <small>Views: {post.view_count}</small>
+                            </div>
+                            <div className="post-votes">
+                              <span className="upvotes mr-2">
+                                👍 {post.upvotes}
+                              </span>
+                              <span className="downvotes">
+                                👎 {post.downvotes}
+                              </span>
+                            </div>
+                          </div>
+                          <Link
+                            to={`/posts/${post.id}`}
+                            className="btn btn-primary mt-3"
                           >
-                            {tag.name}
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="post-category">
-                        {post.category && (
-                          <Badge variant="info">{post.category.name}</Badge>
-                        )}
-                      </div>
-                      <div className="post-votes">
-                        <span className="upvotes">👍 {post.upvotes}</span>
-                        <span className="downvotes">👎 {post.downvotes}</span>
-                      </div>
-                      <Link
-                        to={`/posts/${post.id}`}
-                        className="btn btn-primary mt-2"
-                      >
-                        Read More
-                      </Link>
-                    </Card.Body>
+                            Read More
+                          </Link>
+                        </Card.Body>
+                      </Col>
+                    </Row>
                   </Card>
                 </Col>
               ))}
