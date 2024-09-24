@@ -1,57 +1,144 @@
 /* HomePage.css */
 
-section {
-    margin-top: 2rem;
+.home-page {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.hero-section {
+  min-height: 500px;
+  margin-bottom: 3rem;
+}
+
+.most-viewed-posts {
+  margin-top: 3rem;
+}
+
+h2 {
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.post-card {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.post-card:hover {
+  transform: translateY(-5px);
+}
+
+.post-card .card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+.post-card .card-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.post-card .card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #333;
+}
+
+.post-excerpt {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.post-meta span {
+  margin-right: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.post-meta .author {
+  font-weight: 600;
+}
+
+.post-tags {
+  margin-bottom: 0.5rem;
+}
+
+.post-tags .badge {
+  margin-right: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.post-category {
+  margin-bottom: 0.5rem;
+}
+
+.post-votes {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.post-votes .upvotes {
+  color: #28a745;
+  margin-right: 0.5rem;
+}
+
+.post-votes .downvotes {
+  color: #dc3545;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+  margin-top: auto;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+  border-color: #0056b3;
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.error-alert {
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    min-height: 400px;
   }
-  
+
   h2 {
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
+    font-size: 1.75rem;
   }
-  
-  .card {
-    border: 1px solid #e0e0e0;
-    border-radius: 0.25rem;
-  }
-  
-  .card-img-top {
+
+  .post-card .card-img-top {
     height: 180px;
-    object-fit: cover;
   }
-  
-  .card-body {
-    text-align: center;
-  }
-  
-  .card-title {
-    font-size: 1.25rem;
-  }
-  
-  .card-text {
-    color: #6c757d;
-  }
-  
-  .btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
-  }
-  
-  .btn-secondary {
-    background-color: #6c757d;
-    border-color: #6c757d;
-  }
-  
-  .list-group-item {
-    font-size: 1rem;
-    cursor: pointer;
-  }
-  
-  .modal-title {
-    font-size: 1.25rem;
-  }
-  
-  .modal-body {
-    max-height: 400px;
-    overflow-y: auto;
-  }
-  
+}

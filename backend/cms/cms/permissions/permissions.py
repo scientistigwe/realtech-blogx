@@ -25,29 +25,54 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         return obj.user == request.user
 
 class DynamicJwtPermission(permissions.BasePermission):
-    """
-    Permission class to handle JWT authentication dynamically.
-    """
     def has_permission(self, request, view):
-        # Allow unauthenticated access to JWT endpoints
-        if request.path.startswith('/auth/') and request.method in ['POST', 'GET']:
-            print(f"Request: {request.path}")
+        print(f"Checking permission for path: {request.path}")
+        print(f"Request method: {request.method}")
+        print(f"User authenticated: {request.user.is_authenticated}")
+
+        # Allow access to authentication-related endpoints
+        if request.path.startswith('/auth'):
             return True
 
-        # Allow read-only access to all users for safe methods
+        # Allow access to safe methods (GET, HEAD, OPTIONS)
         if request.method in permissions.SAFE_METHODS:
-            print(f"Request: {request.method}")
             return True
+        
+        # For PostViewSet, use the custom check_post_permissions method
+        if hasattr(view, 'check_post_permissions'):
+            return view.check_post_permissions(request)
 
-        # For non-safe methods, require authentication
-        print(f"Request: {request.user}")
+        # For other views, apply the existing logic
+        auth_required_endpoints = [
+            "/cms-api/v1/posts/",  # POST
+            "/auth/users/",  # GET (user list)
+            "/auth/users/activation/",  # POST (user activation)
+            "/auth/users/me/",  # GET (user details)
+            "/cms-api/v1/users/me/",  # GET (user details)
+            "/auth/users/me/",  # PUT (update user)
+            "/auth/users/me/",  # PATCH (partial update user)
+        ]
 
-        return request.user and request.user.is_authenticated
+        is_auth_required_endpoint = any(endpoint in request.path for endpoint in auth_required_endpoints)
+
+        auth_required_methods = ["PUT", "PATCH", "DELETE"]
+        is_auth_required_method = request.method.upper() in auth_required_methods
+
+        if is_auth_required_endpoint or is_auth_required_method:
+            return request.user and request.user.is_authenticated
+
+        return True
 
     def has_object_permission(self, request, view, obj):
         # Allow read-only access to all users
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        # Allow write access to staff users or the object owner
+        # For PostViewSet, use the custom check_post_permissions method
+        if hasattr(view, 'check_post_permissions'):
+            return view.check_post_permissions(request)
+
+        # For other objects, allow write access to staff users or the object owner
         return request.user.is_staff or obj == request.user
+
+

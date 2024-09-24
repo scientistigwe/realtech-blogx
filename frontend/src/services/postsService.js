@@ -8,7 +8,7 @@ const createFormData = (data) => {
       formData.append(key, data[key]);
     } else if (typeof data[key] === "object") {
       for (const subKey in data[key]) {
-        formData.append(`${key}[${subKey}]`, data[key][subKey]);
+        formData.append(`${key}[${subKey}`, data[key][subKey]);
       }
     } else {
       formData.append(key, data[key]);
@@ -30,10 +30,13 @@ export const postService = {
   },
 
   // Create a new post
-  async createPost(data) {
+  async createPost(formData) {
     try {
-      const formData = createFormData(data);
-      const response = await api.posts.create(formData);
+      const response = await api.posts.create(formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return response.data;
     } catch (error) {
       console.error("Error creating post:", error);
@@ -112,7 +115,10 @@ export const postService = {
   async fetchMostViewedPosts() {
     try {
       const response = await api.posts.mostViewed();
-      return response.data;
+      console.log(
+        `Most viewed posts from service: ${JSON.stringify(response)}`
+      );
+      return response;
     } catch (error) {
       console.error("Error fetching most viewed posts:", error);
       throw error;
@@ -202,4 +208,7 @@ export const postService = {
       throw error;
     }
   },
+
+  // Add createFormData to the postService object
+  createFormData,
 };

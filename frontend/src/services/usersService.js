@@ -23,6 +23,16 @@ export const usersService = {
     }
   },
 
+  getAdminUserProfile: async () => {
+    try {
+      const response = await api.users.checkAdminStatus();
+      return response.data;
+    } catch (error) {
+      console.error("Error getting current user profile:", error);
+      throw error;
+    }
+  },
+
   getUserById: async (id) => {
     try {
       const response = await api.users.read(id);

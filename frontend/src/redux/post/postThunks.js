@@ -15,13 +15,22 @@ export const fetchPosts = createAsyncThunk(
 
 export const createPost = createAsyncThunk(
   "posts/createPost",
-  async (postData, { rejectWithValue }) => {
+  async (formData, { rejectWithValue }) => {
     try {
-      const formData = postService.createFormData(postData);
       const response = await postService.createPost(formData);
-      return response.data;
+      return response; // The entire response object is returned
     } catch (error) {
-      return rejectWithValue(error.message);
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        return rejectWithValue(error.response.data);
+      } else if (error.request) {
+        // The request was made but no response was received
+        return rejectWithValue("No response received from server");
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        return rejectWithValue(error.message);
+      }
     }
   }
 );

@@ -3,6 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { selectIsAuthenticated } from "../../redux/auth/authSelectors";
 import { logoutUser } from "../../redux/auth/authThunks";
+import {
+  selectUsersState,
+  selectIsAdmin,
+} from "../../redux/user/usersSelectors";
+import {
+  fetchCurrentUser,
+  fetchAdminStatus,
+} from "../../redux/user/usersThunk";
 import { toast } from "react-toastify";
 import "../../styles/Header.css";
 
@@ -10,6 +18,7 @@ const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const isAdmin = useSelector(selectIsAdmin);
 
   const handleLogout = async () => {
     try {
@@ -19,6 +28,28 @@ const Header = () => {
     } catch (err) {
       console.error("Error logging out:", err);
       toast.error("Error logging out. Please try again.");
+    }
+  };
+
+  const handleFetchCurrentUser = async () => {
+    try {
+      await dispatch(fetchCurrentUser());
+      toast.success("Profile fetched successfully!");
+      navigate("/profile");
+    } catch (err) {
+      toast.error("Error fetching profile. Please try again.");
+      console.error("Error fetching current user:", err);
+    }
+  };
+
+  const handleFetchAdminStatus = async () => {
+    try {
+      await dispatch(fetchAdminStatus());
+      toast.success("Admin status verified successfully!");
+      navigate("/admin-dashboard");
+    } catch (err) {
+      toast.error("Error verifying admin status. Please try again.");
+      console.error("Error checking admin status:", err);
     }
   };
 
@@ -41,9 +72,33 @@ const Header = () => {
           </Link>
           {isAuthenticated ? (
             <>
-              <Link className="nav-link" to="/profile" aria-label="Profile">
+              {/* User Profile */}
+              <button
+                className="nav-link"
+                onClick={handleFetchCurrentUser}
+                aria-label="Profile"
+              >
                 Profile
+              </button>
+              {/* Published Posts */}
+              <Link
+                className="nav-link"
+                to="/published-posts"
+                aria-label="Published Posts"
+              >
+                Published Posts
               </Link>
+              {/* Draft Posts for admin only */}
+              {isAdmin && (
+                <Link
+                  className="nav-link"
+                  to="/draft-posts"
+                  aria-label="Draft Posts"
+                >
+                  Draft Posts
+                </Link>
+              )}
+              {/* Logout */}
               <button
                 className="nav-link"
                 onClick={handleLogout}
@@ -60,7 +115,23 @@ const Header = () => {
               <Link className="nav-link" to="/register" aria-label="Sign Up">
                 Sign Up
               </Link>
+              <Link
+                className="nav-link"
+                to="/admin-login"
+                aria-label="Admin Login"
+              >
+                Admin
+              </Link>
             </>
+          )}
+          {isAdmin && (
+            <button
+              className="nav-link"
+              onClick={handleFetchAdminStatus}
+              aria-label="Admin Dashboard"
+            >
+              Admin Dashboard
+            </button>
           )}
         </nav>
       </div>

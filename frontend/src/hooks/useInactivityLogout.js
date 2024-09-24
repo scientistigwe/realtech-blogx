@@ -1,37 +1,62 @@
-import React, { useEffect } from "react";
+import { useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { clearTokens } from "../redux/auth/authSlice";
 
-const useInactivityLogout = (timeoutDuration = 3600000) => {
+const useInactivityLogout = (timeout = 3600000) => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const clearAllStorage = useCallback(() => {
+    // Clear cookies
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+
+    // Clear local storage
+    localStorage.clear();
+
+    // Clear session storage
+    sessionStorage.clear();
+
+    // Clear Redux state
+    dispatch(clearTokens());
+
+    // Redirect to homepage
+    navigate("/");
+  }, [navigate, dispatch]);
+
   useEffect(() => {
-    let timeoutId;
+    let inactivityTimer;
 
     const resetTimer = () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      timeoutId = setTimeout(() => {
-        // Log out the user
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        window.location.href = "/login"; // Redirect to login
-      }, timeoutDuration);
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(clearAllStorage, timeout);
     };
 
-    // Set up event listeners for user interactions
-    window.addEventListener("mousemove", resetTimer);
-    window.addEventListener("keydown", resetTimer);
-    window.addEventListener("scroll", resetTimer);
+    // Set up event listeners for user activity
+    const events = [
+      "mousedown",
+      "keypress",
+      "scroll",
+      "mousemove",
+      "touchstart",
+    ];
+    events.forEach((event) => document.addEventListener(event, resetTimer));
 
-    // Start the timer
+    // Initial timer setup
     resetTimer();
 
-    // Cleanup event listeners and timeout on component unmount
+    // Cleanup function
     return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener("mousemove", resetTimer);
-      window.removeEventListener("keydown", resetTimer);
-      window.removeEventListener("scroll", resetTimer);
+      clearTimeout(inactivityTimer);
+      events.forEach((event) =>
+        document.removeEventListener(event, resetTimer)
+      );
     };
-  }, [timeoutDuration]);
+  }, [timeout, clearAllStorage]);
 };
 
 export default useInactivityLogout;

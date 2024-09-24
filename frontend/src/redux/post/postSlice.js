@@ -43,6 +43,9 @@ const postSlice = createSlice({
     clearCurrentPost: (state) => {
       state.currentPost = null;
     },
+    clearCreationSuccess: (state) => {
+      state.creationSuccess = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -272,6 +275,7 @@ const postSlice = createSlice({
 });
 
 export const { clearError, clearCurrentPost } = postSlice.actions;
+export const { clearCreationSuccess } = postSlice.actions;
 
 export default postSlice.reducer;
 
@@ -286,3 +290,4 @@ export const selectPostsLoading = (state) => state.posts.loading;
 export const selectPostsError = (state) => state.posts.error;
 export const selectSlugAvailable = (state) => state.posts.slugAvailable;
 export const selectAnalytics = (state) => state.posts.analytics;
+export const selectPostCreationSuccess = (state) => state.posts.creationSuccess;

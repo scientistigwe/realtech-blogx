@@ -1,104 +1,79 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Carousel, Spinner, Alert } from "react-bootstrap";
+import React from "react";
+import { Carousel } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { fetchMostViewedPosts } from "../../redux/post/postThunks";
-import {
-  selectMostViewedPosts,
-  selectPostsLoading,
-  selectPostsError,
-} from "../../redux/post/postSlice";
+import { Badge } from "react-bootstrap";
 
-import "../../styles/HeroCarousel.css";
-
-const HeroCarousel = () => {
-  const dispatch = useDispatch();
-  const posts = useSelector(selectMostViewedPosts);
-  const loading = useSelector(selectPostsLoading);
-  const error = useSelector(selectPostsError);
-  const [carouselItems, setCarouselItems] = useState([]);
-  const [lastFetchTime, setLastFetchTime] = useState(null);
-
-  // Debounce function
-  const debounce = (func, wait) => {
-    let timeoutId;
-    return (...args) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func(...args), wait);
-    };
+const HeroCarousel = ({ posts }) => {
+  const welcomeSlide = {
+    id: "welcome",
+    title: "Welcome to RealTech BlogX",
+    content: "Explore our latest blogs and insights.",
+    link: "/blogs",
+    isWelcome: true,
   };
 
-  const debouncedFetch = useMemo(() => {
-    return debounce(() => {
-      dispatch(fetchMostViewedPosts()); // Call the thunk directly
-    }, 500);
-  }, [dispatch]);
-
-  useEffect(() => {
-    const now = Date.now();
-    if (!lastFetchTime || now - lastFetchTime >= 86400000) {
-      debouncedFetch();
-      setLastFetchTime(now);
-    }
-  }, [debouncedFetch, lastFetchTime]);
-
-  useEffect(() => {
-    if (Array.isArray(posts)) {
-      const welcomeSlide = {
-        id: "welcome",
-        title: "Welcome to RealTech BlogX",
-        content: "Explore our latest blogs and insights.",
-        link: "/blogs",
-        isWelcome: true,
-      };
-
-      const mostViewedPosts = posts.slice(0, 3);
-      console.log(`Most viewed posts: ${mostViewedPosts}`);
-
-      setCarouselItems([welcomeSlide, ...mostViewedPosts]);
-    }
-  }, [posts]);
-
-  if (loading) {
-    return (
-      <div className="text-center">
-        <Spinner animation="border" role="status">
-          <span className="sr-only">Loading...</span>
-        </Spinner>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert variant="danger" className="text-center">
-        Error: {error.message || "Failed to load posts."}
-      </Alert>
-    );
-  }
-
-  if (carouselItems.length === 0) {
-    return <div className="text-center">No posts available.</div>;
-  }
+  const topPosts = posts.slice(0, 3);
+  const carouselItems = [welcomeSlide, ...topPosts];
 
   return (
     <Carousel className="hero-carousel">
-      {carouselItems.map((item) => (
+      {carouselItems.map((item, index) => (
         <Carousel.Item key={item.id}>
-          <div className="hero-slide">
-            <div className="hero-content">
-              <h1>{item.title}</h1>
-              <p>{item.content}</p>
-              <Link
-                to={item.link}
-                className={`btn ${
-                  item.isWelcome ? "btn-primary" : "btn-secondary"
-                }`}
-              >
-                {item.isWelcome ? "Explore Blogs" : "Read More"}
-              </Link>
+          {item.isWelcome ? (
+            <div className="welcome-slide">
+              <div className="welcome-content">
+                <h1>{item.title}</h1>
+                <p>{item.content}</p>
+                <Link to={item.link} className="btn btn-primary">
+                  Explore Blogs
+                </Link>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="hero-slide">
+              <div className="hero-card">
+                <div className="hero-image">
+                  <img
+                    src={item.thumbnail || "/api/placeholder/800/600"}
+                    alt={`${item.title} thumbnail`}
+                  />
+                </div>
+                <div className="hero-content">
+                  <h2>{item.title}</h2>
+                  <p className="excerpt">{item.excerpt}</p>
+                  <div className="post-meta">
+                    <span className="author">
+                      By {item.author.first_name} {item.author.last_name}
+                    </span>
+                    <span className="views">Views: {item.view_count}</span>
+                    <span className="date">
+                      Published:{" "}
+                      {new Date(item.publication_date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="post-tags">
+                    {item.tags.map((tag) => (
+                      <Badge key={tag.id} variant="secondary" className="mr-1">
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                  {item.category && (
+                    <div className="post-category">
+                      <Badge variant="info">{item.category.name}</Badge>
+                    </div>
+                  )}
+                  <div className="post-votes">
+                    <span className="upvotes">👍 {item.upvotes}</span>
+                    <span className="downvotes">👎 {item.downvotes}</span>
+                  </div>
+                  <Link to={`/posts/${item.id}`} className="btn btn-secondary">
+                    Read More
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </Carousel.Item>
       ))}
     </Carousel>

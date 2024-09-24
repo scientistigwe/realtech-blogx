@@ -100,7 +100,8 @@ AUTHENTICATION_BACKENDS = [
 # Rest Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'cms.permissions.CustomJWTAuth.CookieJWTAuthentication',
+        # 'cms.permissions.CustomJWTAuth.CookieJWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -152,11 +153,12 @@ DJOSER = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': True,
+    'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': False,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     'USER_ID_FIELD': 'id',
@@ -172,6 +174,7 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_SECURE': not DEBUG,
     'AUTH_COOKIE_SAMESITE': 'Lax',
 }
+
 
 # Templates
 TEMPLATES = [
@@ -328,4 +331,25 @@ SPECTACULAR_SETTINGS = {
         },
     ],
 }
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'django_debug.log'),
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'WARNING',
+    },
+}
+
 

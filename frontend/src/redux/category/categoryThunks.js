@@ -1,15 +1,14 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { categoryService } from "../../services/categoryService";
 
-// Fetch categories
+// Fetch all categories
 export const fetchCategories = createAsyncThunk(
-  "categories/fetchCategories",
+  "categories/fetchAllCategories",
   async (_, { rejectWithValue }) => {
     try {
       const response = await categoryService.listCategories();
-      // Ensure response has a data property that is an array
-      if (response && Array.isArray(response.data)) {
-        return response.data; // Return the data array
+      if (response && Array.isArray(response)) {
+        return response;
       } else {
         throw new Error("Response data is not an array");
       }

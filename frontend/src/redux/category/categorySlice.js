@@ -11,6 +11,8 @@ import {
 const initialState = {
   categories: [], // Only store necessary category data
   currentCategory: null, // To store a single category's details if needed
+  count: 0, // Total number of categories
+  currentPage: 1, // Current page number
   status: "idle", // Track status of async operations
   error: null, // Store error messages
 };
@@ -28,12 +30,18 @@ const categorySlice = createSlice({
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.categories =
-          action.payload?.map((category) => ({
+        state.categories = [
+          ...state.categories,
+          ...(action.payload?.results?.map((category) => ({
             id: category.id,
             name: category.name,
             // Add other essential fields if needed
-          })) ?? []; // Store only essential category data
+          })) ?? []),
+        ];
+        state.count = action.payload?.count || 0;
+        state.currentPage = action.payload?.previous
+          ? state.currentPage + 1
+          : 1;
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.status = "failed";
@@ -48,6 +56,7 @@ const categorySlice = createSlice({
             name: action.payload.name, // Store only essential fields
             // Add other essential fields if needed
           });
+          state.count++;
         }
       })
 
@@ -101,6 +110,7 @@ const categorySlice = createSlice({
         state.categories = state.categories.filter(
           (category) => category.id !== action.payload
         );
+        state.count--;
         if (state.currentCategory?.id === action.payload) {
           state.currentCategory = null; // Clear current category if deleted
         }
@@ -109,3 +119,10 @@ const categorySlice = createSlice({
 });
 
 export default categorySlice.reducer;
+
+// Export selectors
+export const selectCategories = (state) => state.categories.categories;
+export const selectCategoriesCount = (state) => state.categories.count;
+export const selectCurrentPage = (state) => state.categories.currentPage;
+export const selectCategoriesStatus = (state) => state.categories.status;
+export const selectCategoriesError = (state) => state.categories.error;

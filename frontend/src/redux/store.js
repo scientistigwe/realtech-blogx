@@ -3,7 +3,9 @@ import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage"; // defaults to localStorage for web
 import { combineReducers } from "@reduxjs/toolkit";
 import postReducer from "./post/postSlice";
-import authReducer from "./auth/authSlice"; // Your auth slice
+import authReducer from "./auth/authSlice";
+import categoryReducer from "./category/categorySlice";
+import usersReducer from "./user/usersSlice";
 
 const persistConfig = {
   key: "root",
@@ -15,7 +17,9 @@ const persistConfig = {
 const rootReducer = combineReducers({
   posts: postReducer,
   auth: authReducer,
-  // Add other reducers here if needed
+  categories: categoryReducer,
+  users: usersReducer,
+  // Add other reducers here if needed});
 });
 
 // Create persisted reducer

@@ -9,9 +9,14 @@ export const selectCategories = createSelector(
   (categoriesState) => categoriesState?.categories || []
 );
 
-export const selectCurrentCategory = createSelector(
+export const selectCategoriesCount = createSelector(
   [selectCategoriesState],
-  (categoriesState) => categoriesState?.currentCategory || null
+  (categoriesState) => categoriesState?.count || 0
+);
+
+export const selectNextPage = createSelector(
+  [selectCategoriesState],
+  (categoriesState) => categoriesState?.nextPage || null
 );
 
 export const selectCategoryStatus = createSelector(
@@ -28,11 +33,6 @@ export const selectCategoryById = createSelector(
   [selectCategories, (state, categoryId) => categoryId],
   (categories, categoryId) =>
     categories.find((category) => category.id === categoryId) || null
-);
-
-export const selectCategoriesWithParent = createSelector(
-  [selectCategories],
-  (categories) => categories.filter((category) => category.parent_id !== null)
 );
 
 export const selectRootCategories = createSelector(

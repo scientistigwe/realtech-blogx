@@ -1,0 +1,145 @@
+.footer {
+    background-color: #1c1d1f;
+    color: #fff;
+    padding: 40px 0 0;
+    font-size: 14px;
+    margin-top: auto;
+  }
+  
+  .width-wrap-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  .footer-container {
+    padding-bottom: 40px;
+  }
+  
+  .footer-section {
+    margin-bottom: 20px;
+  }
+  
+  .footer-section h5 {
+    color: #fff;
+    margin-bottom: 15px;
+    font-size: 16px;
+  }
+  
+  .footer-section ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .footer-section ul li {
+    margin-bottom: 10px;
+  }
+  
+  .footer-section ul li a {
+    color: #ccc;
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+  
+  .footer-section ul li a:hover {
+    color: #fff;
+  }
+  
+  .social-networks a {
+    color: #fff;
+    margin-right: 15px;
+    font-size: 20px;
+    transition: color 0.3s ease;
+  }
+  
+  .social-networks a:hover {
+    color: #4CAF50;
+  }
+  
+  .app-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .app-button {
+    background-color: #424242;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+  }
+  
+  .app-button:hover {
+    background-color: #4CAF50;
+  }
+  
+  .footer-bottom {
+    background-color: #161718;
+    padding: 20px 0;
+  }
+  
+  .trending-sections {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .trending-section {
+    flex: 1 1 200px;
+    margin-bottom: 15px;
+  }
+  
+  .trending-section h6 {
+    color: #4CAF50;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  
+  .trending-section p {
+    color: #ccc;
+    font-size: 12px;
+  }
+  
+  .footer-links {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  
+  .footer-links a {
+    color: #ccc;
+    text-decoration: none;
+    margin: 0 10px;
+    transition: color 0.3s ease;
+  }
+  
+  .footer-links a:hover {
+    color: #4CAF50;
+  }
+  
+  .copyright {
+    text-align: center;
+    color: #ccc;
+    margin-bottom: 15px;
+  }
+  
+  .disclaimer {
+    text-align: center;
+    color: #999;
+    font-size: 12px;
+  }
+  
+  @media (max-width: 768px) {
+    .footer-container .row {
+      flex-direction: column;
+    }
+    
+    .footer-section {
+      margin-bottom: 30px;
+    }
+    
+    .trending-sections {
+      flex-direction: column;
+    }
+  }

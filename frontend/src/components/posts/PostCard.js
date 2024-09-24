@@ -5,25 +5,38 @@ import "../../styles/PostCard.css";
 
 const PostCard = ({ post }) => {
   return (
-    <Card className="post-card">
-      <Card.Img
-        variant="top"
-        src={post.thumbnailUrl}
-        className="post-thumbnail"
-      />
+    <Card className="post-card mb-3">
+      {post.thumbnail && (
+        <Card.Img variant="top" src={post.thumbnail} alt={post.title} />
+      )}
       <Card.Body>
         <Card.Title>{post.title}</Card.Title>
-        <Card.Text>
-          {post.content.length > 100
-            ? `${post.content.substring(0, 100)}...`
-            : post.content}
-        </Card.Text>
         <Card.Subtitle className="mb-2 text-muted">
-          Published on {new Date(post.publicationDate).toLocaleDateString()}
+          By {post.author.username}
         </Card.Subtitle>
-        <Card.Text>Votes: {post.voteCount}</Card.Text>
-        <Card.Text>Comments: {post.commentCount}</Card.Text>
-        <Link to={`/posts/${post.id}`}>
+        <Card.Text>
+          {post.excerpt ||
+            (post.content.length > 100
+              ? `${post.content.substring(0, 100)}...`
+              : post.content)}
+        </Card.Text>
+        <div className="post-meta">
+          <p>
+            Published on: {new Date(post.publication_date).toLocaleDateString()}
+          </p>
+          <p>Views: {post.view_count}</p>
+          {post.category && <p>Category: {post.category.name}</p>}
+        </div>
+        <div className="post-stats">
+          <p>Upvotes: {post.upvotes}</p>
+          <p>Downvotes: {post.downvotes}</p>
+        </div>
+        {post.tags && post.tags.length > 0 && (
+          <div className="post-tags">
+            <p>Tags: {post.tags.map((tag) => tag.name).join(", ")}</p>
+          </div>
+        )}
+        <Link to={`/post/${post.slug}`}>
           <Button variant="primary">Read More</Button>
         </Link>
       </Card.Body>

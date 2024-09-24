@@ -89,6 +89,7 @@ export const apiEndpoints = {
     list: "cms-api/v1/users/", // GET
     create: "cms-api/v1/users/", // POST
     me: "cms-api/v1/users/me/", // GET
+    checkAdminStatus: "cms-api/v1/users/check_admin_status/", // GET
     read: (id) => `cms-api/v1/users/${id}/`, // GET
     update: (id) => `cms-api/v1/users/${id}/`, // PUT
     partialUpdate: (id) => `cms-api/v1/users/${id}/`, // PATCH

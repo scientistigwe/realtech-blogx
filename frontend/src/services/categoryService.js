@@ -4,8 +4,25 @@ import api from "../utils/api";
 export const categoryService = {
   async listCategories() {
     try {
-      const response = await api.categories.list();
-      return response;
+      let allCategories = [];
+      let nextPageUrl = null;
+      let response = await api.categories.list(); // Fetch first page
+
+      // Add the categories from the first page
+      allCategories = [...response.results];
+      nextPageUrl = response.next;
+
+      // Fetch subsequent pages if available
+      while (nextPageUrl) {
+        const nextPageResponse = await api.categories.list({
+          url: nextPageUrl,
+        });
+
+        // Accumulate the results from the next page
+        allCategories = [...allCategories, ...nextPageResponse.results];
+        nextPageUrl = nextPageResponse.next; // Get the next page URL, if available
+      }
+      return allCategories;
     } catch (error) {
       console.error("Error listing categories:", error);
       throw error;

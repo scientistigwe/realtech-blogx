@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useEffect } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -12,6 +11,7 @@ import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 import UserProfile from "./components/profile/UserProfile";
 import PostList from "./components/posts/PostList";
+import PostCreate from "./components/posts/PostCreate";
 import PostDetail from "./components/posts/PostDetail";
 import useInactivityLogout from "./hooks/useInactivityLogout";
 import { checkAuth } from "./redux/auth/authThunks";
@@ -60,11 +60,12 @@ function App() {
       <Header />
       <SearchNavbar onSearch={handleSearch} />
       <Routes>
+        <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<UserProfile />} />
-        <Route path="/" element={<HomePage />} />
+        <Route path="/create-post" element={<PostCreate />} />
         <Route path="/posts" element={<PostList />} />
         <Route path="/posts/:id" element={<PostDetail />} />
         <Route path="*" element={<NotFoundPage />} />
