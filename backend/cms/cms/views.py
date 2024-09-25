@@ -1,3 +1,4 @@
+import logging
 from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -20,19 +21,29 @@ from .serializers import (
 from cms.permissions.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly, DynamicJwtPermission
 from .pagination import StandardResultsSetPagination
 from django.contrib.auth.decorators import login_required
-import logging
 
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
-from rest_framework.permissions import AllowAny, IsAuthenticated
-
 class BaseModelViewSet(viewsets.ModelViewSet):
+    """
+    Base ViewSet for common functionality across all model ViewSets.
+    
+    Attributes:
+        permission_classes (list): List of permission classes for the ViewSet.
+        pagination_class (class): Pagination class for the ViewSet.
+    """
     permission_classes = [DynamicJwtPermission]
     pagination_class = StandardResultsSetPagination
 
     def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        
+        Returns:
+            list: List of permission instances.
+        """
         logger.debug(f"Getting permissions for action: {self.action}")
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             permission_classes = [IsAuthenticated]
@@ -42,6 +53,10 @@ class BaseModelViewSet(viewsets.ModelViewSet):
         return [cls() for cls in permission_classes]
 
 class CustomTokenObtainPairView(TokenObtainPairView):
+    """
+    Custom token obtain pair view that includes user data in the response.
+    """
+    
     @extend_schema(
         summary="Obtain JWT token pair",
         description="Authenticate user and return JWT token pair along with user data",
@@ -63,6 +78,15 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         }}
     )
     def post(self, request, *args, **kwargs):
+        """
+        Handle POST requests to obtain JWT token pair.
+        
+        Args:
+            request (HttpRequest): The HTTP request object.
+            
+        Returns:
+            Response: JWT token pair along with user data.
+        """
         logger.info("Received token obtain request")
         response = super().post(request, *args, **kwargs)
         logger.info(f"Token obtain request processed. Status: {response.status_code}")
@@ -78,26 +102,58 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         return response
 
     def get_user_from_token(self, access_token):
+        """
+        Retrieve user data from the access token.
+        
+        Args:
+            access_token (str): The JWT access token.
+            
+        Returns:
+            dict: User data extracted from the token.
+        """
         try:
             logger.debug("Attempting to retrieve user data from token")
             token = AccessToken(access_token)
             user_id = token['user_id']
             user = User.objects.get(id=user_id)
             logger.info(f"User retrieved successfully. ID: {user.id}, Username: {user.username}")
-            return {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'is_superuser': user.is_superuser,
-                'is_staff': user.is_staff,
-                'is_active': user.is_active,
+            print(user)
+
+            # Create a dictionary with only the attributes that actually exist
+            user_data = {
+                'id': getattr(user, 'id', None),
+                'username': getattr(user, 'username', None),
+                'email': getattr(user, 'email', None),
+                'first_name': getattr(user, 'first_name', None),
+                'last_name': getattr(user, 'last_name', None),
+                'bio': getattr(user, 'bio', None),
+                'website': getattr(user, 'website', None),
+                'location': getattr(user, 'location', None),
+                'profile_picture': getattr(user, 'profile_picture', None),
+                'social_profiles': getattr(user, 'social_profiles', None),
+                'last_active': getattr(user, 'last_active', None),
+                'is_author': getattr(user, 'is_author', False),
+                'role': getattr(user, 'role', None),
+                'is_superuser': getattr(user, 'is_superuser', False),
+                'is_staff': getattr(user, 'is_staff', False),
+                'is_active': getattr(user, 'is_active', False),
                 'is_authenticated': True
             }
+
+            return user_data
+
+        except AttributeError as e:
+            logger.warning(f"Missing attribute while retrieving user data: {str(e)}")
+            return None
+
         except Exception as e:
-            logger.error(f"Error retrieving user data: {str(e)}")
+            logger.error(f"Unexpected error retrieving user data: {str(e)}")
             return None
 
 class CustomTokenRefreshView(TokenRefreshView):
+    """
+    Custom token refresh view with AllowAny permission.
+    """
     permission_classes = [AllowAny]
 
     @extend_schema(
@@ -111,10 +167,22 @@ class CustomTokenRefreshView(TokenRefreshView):
         }}
     )
     def post(self, request, *args, **kwargs):
+        """
+        Handle POST requests to refresh JWT token.
+        
+        Args:
+            request (HttpRequest): The HTTP request object.
+            
+        Returns:
+            Response: Refreshed JWT access token.
+        """
         logger.info("Received token refresh request")
         return super().post(request, *args, **kwargs)
 
 class CustomUserViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for CustomUser model operations.
+    """
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
 
@@ -125,6 +193,15 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=['get'])
     def me(self, request):
+        """
+        Retrieve information about the current authenticated user.
+        
+        Args:
+            request (HttpRequest): The HTTP request object.
+            
+        Returns:
+            Response: Serialized data of the current user.
+        """
         logger.info("Retrieving user info for authenticated user")
         logger.debug(f"User info retrieved. Username: {request.user.username}")
         return Response(CustomUserSerializer(request.user).data)
@@ -149,6 +226,15 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def check_auth(self, request):
+        """
+        Check if the current user is authenticated.
+        
+        Args:
+            request (HttpRequest): The HTTP request object.
+            
+        Returns:
+            Response: Authentication status and user data if authenticated.
+        """
         logger.info("Checking authentication status")
         if request.user.is_authenticated:
             logger.debug("User authenticated")
@@ -156,6 +242,16 @@ class CustomUserViewSet(viewsets.ModelViewSet):
                 'id': request.user.id,
                 'username': request.user.username,
                 'email': request.user.email,
+                'first_name': request.user.first_name,
+                'last_name': request.user.last_name,
+                'bio': request.user.bio,
+                'website': request.user.website,
+                'location': request.user.location,
+                'profile_picture': request.user.profile_picture,
+                'social_profiles': request.user.social_profiles,
+                'last_active': request.user.last_active,
+                'is_author': request.user.is_author,
+                'role': request.user.role,
             }
             logger.info(f"Authentication successful. User data: {user_data}")
             return Response({
@@ -165,16 +261,6 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         logger.warning("User not authenticated")
         return Response({'is_authenticated': False})
 
-    @extend_schema(
-        summary="Logout user",
-        description="Blacklist the user's refresh token to logout",
-        responses={200: {
-            "type": "object",
-            "properties": {
-                "detail": {"type": "string"}
-            }
-        }}
-    )
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def logout(self, request):
         logger.info("Received logout request")
@@ -229,23 +315,48 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         return Response({'is_admin': is_admin, 'message': message})
 
 class TagViewSet(BaseModelViewSet):
+    """
+    ViewSet for Tag model operations.
+    """
     queryset = Tag.objects.all().order_by('id')
     serializer_class = TagSerializer
 
     @action(detail=False, methods=['get'])
     def most_used(self, request):
+        """
+        Retrieve the most used tags.
+        
+        Args:
+            request (HttpRequest): The HTTP request object.
+            
+        Returns:
+            Response: Serialized data of the most used tags.
+        """
         limit = int(request.query_params.get('limit', 10))
         tags = Tag.objects.annotate(post_count=Count('posts')).order_by('-post_count')[:limit]
         serializer = self.get_serializer(tags, many=True)
         return Response(serializer.data)
 
 class CategoryViewSet(BaseModelViewSet):
+    """
+    ViewSet for Category model operations.
+    """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [DynamicJwtPermission]
 
     @action(detail=True, methods=['get'])
     def subcategories(self, request, pk=None):
+        """
+        Retrieve subcategories for a given category.
+        
+        Args:
+            request (HttpRequest): The HTTP request object.
+            pk (int): The primary key of the parent category.
+            
+        Returns:
+            Response: Serialized data of the subcategories.
+        """
         category = self.get_object()
         logger.info(f"Retrieving subcategories for category: {category.name}")
         subcategories = category.subcategories.all()
@@ -591,12 +702,24 @@ class UserActivityViewSet(BaseModelViewSet):
         return Response(serializer.data)
 
 class SearchViewSet(BaseModelViewSet):
+    """
+    ViewSet for search functionality.
+    """
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [DynamicJwtPermission]
 
     @action(detail=False, methods=['get'])
     def autocomplete(self, request):
+        """
+        Provide autocomplete suggestions based on the search query.
+        
+        Args:
+            request (HttpRequest): The HTTP request object.
+            
+        Returns:
+            Response: Serialized data of the autocomplete suggestions.
+        """
         query = request.query_params.get('q', '')
         logger.info(f"Autocomplete search query: {query}")
         posts = Post.objects.filter(Q(title__icontains=query) | Q(content__icontains=query))

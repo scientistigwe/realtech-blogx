@@ -5,6 +5,7 @@ import { Card, Image } from "react-bootstrap";
 const defaultAvatar = "path/to/default-avatar.png";
 
 const UserProfileCard = ({ user }) => {
+  console.log(`User: ${JSON.stringify(user)}`);
   return (
     <Card className="profile-card">
       <div className="profile-header">

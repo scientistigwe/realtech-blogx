@@ -1,29 +1,49 @@
 import React from "react";
-import { Navbar, Container, Row, Col } from "react-bootstrap";
+import { Navbar, Container } from "react-bootstrap";
 import CategoryNavbar from "./CategoryNavbar";
 import SearchNavbar from "./SearchNavbar";
-import "./../../styles/Navbar.css";
+import styled from "styled-components";
+
+const NavbarContainer = styled(Navbar)`
+  background-color: #f8f9fa;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e9ecef;
+`;
+
+const NavbarContent = styled(Container)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const SearchAndCategoryWrapper = styled.div`
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+`;
 
 const NavbarComponent = () => {
   return (
-    <Navbar bg="light" expand="lg" className="flex-column">
-      <Container fluid className="px-0">
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Row className=" row w-100">
-            <Col className="col-md-12 d-flex justify-content-center">
-              <div style={{ width: "80%" }}>
-                <CategoryNavbar />
-              </div>
-            </Col>
-            <Col className="col-md-12 w-100 mt-3 d-flex justify-content-center">
-              <div style={{ width: "50%" }}>
-                <SearchNavbar />
-              </div>
-            </Col>
-          </Row>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
+    <NavbarContainer expand="lg">
+      <NavbarContent fluid>
+        <SearchAndCategoryWrapper>
+          <div style={{ width: "100%", marginBottom: "1rem" }}>
+            <CategoryNavbar />
+          </div>
+          <div style={{ width: "100%" }}>
+            <SearchNavbar />
+          </div>
+        </SearchAndCategoryWrapper>
+      </NavbarContent>
+    </NavbarContainer>
   );
 };
 

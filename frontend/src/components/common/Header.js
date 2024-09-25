@@ -3,16 +3,67 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { selectIsAuthenticated } from "../../redux/auth/authSelectors";
 import { logoutUser } from "../../redux/auth/authThunks";
-import {
-  selectUsersState,
-  selectIsAdmin,
-} from "../../redux/user/usersSelectors";
+import { selectIsAdmin } from "../../redux/user/usersSelectors";
 import {
   fetchCurrentUser,
   fetchAdminStatus,
 } from "../../redux/user/usersThunk";
 import { toast } from "react-toastify";
-import "../../styles/Header.css";
+import styled from "styled-components";
+
+const HeaderContainer = styled.header`
+  background-color: #333;
+  color: #fff;
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+`;
+
+const HeaderContent = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const Logo = styled(Link)`
+  display: flex;
+  align-items: center;
+  color: #fff;
+  text-decoration: none;
+
+  .brand-logo {
+    height: 40px;
+    margin-right: 0.5rem;
+  }
+
+  .brand-name {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #fff;
+    opacity: 0.8;
+  }
+`;
+
+const NavLinks = styled.nav`
+  display: flex;
+  align-items: center;
+
+  .nav-link {
+    color: #fff;
+    text-decoration: none;
+    margin-left: 1.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+
+    &:hover {
+      color: #ccc;
+    }
+  }
+`;
 
 const Header = () => {
   const navigate = useNavigate();
@@ -54,25 +105,22 @@ const Header = () => {
   };
 
   return (
-    <header className="header">
-      <div className="container">
-        <div className="logo">
-          <Link to="/" aria-label="Homepage" className="brand-link">
-            <img
-              src="/logo.png"
-              alt="RealTech BlogX brand logo"
-              className="brand-logo"
-            />
-            <span className="brand-name">RealTech BlogX</span>
-          </Link>
-        </div>
-        <nav className="nav-links">
+    <HeaderContainer>
+      <HeaderContent>
+        <Logo to="/" aria-label="Homepage">
+          <img
+            src="/logo.png"
+            alt="RealTech BlogX brand logo"
+            className="brand-logo"
+          />
+          <span className="brand-name">RealTech BlogX</span>
+        </Logo>
+        <NavLinks>
           <Link className="nav-link home-button" to="/" aria-label="Home">
             Home
           </Link>
           {isAuthenticated ? (
             <>
-              {/* User Profile */}
               <button
                 className="nav-link"
                 onClick={handleFetchCurrentUser}
@@ -80,7 +128,6 @@ const Header = () => {
               >
                 Profile
               </button>
-              {/* Published Posts */}
               <Link
                 className="nav-link"
                 to="/published-posts"
@@ -88,7 +135,6 @@ const Header = () => {
               >
                 Published Posts
               </Link>
-              {/* Draft Posts for admin only */}
               {isAdmin && (
                 <Link
                   className="nav-link"
@@ -98,7 +144,6 @@ const Header = () => {
                   Draft Posts
                 </Link>
               )}
-              {/* Logout */}
               <button
                 className="nav-link"
                 onClick={handleLogout}
@@ -133,9 +178,9 @@ const Header = () => {
               Admin Dashboard
             </button>
           )}
-        </nav>
-      </div>
-    </header>
+        </NavLinks>
+      </HeaderContent>
+    </HeaderContainer>
   );
 };
 

@@ -10,14 +10,44 @@ import {
   Alert,
 } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import HeroCarousel from "../components/common/HeroCarousel";
+import HeroCarousel from "./../components/common/HeroCarousel";
 import { fetchMostViewedPosts } from "../redux/post/postThunks";
 import {
   selectMostViewedPosts,
   selectPostsLoading,
   selectPostsError,
 } from "../redux/post/postSlice";
-import "../styles/HomePage.css";
+import styled from "styled-components";
+
+const PostCard = styled(Card)`
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+`;
+
+const PostTitle = styled.h4`
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+`;
+
+const PostExcerpt = styled.p`
+  color: #555;
+  font-size: 1rem;
+  line-height: 1.6;
+`;
+
+const MetaInfo = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #6c757d;
+`;
 
 const HomePage = () => {
   const dispatch = useDispatch();
@@ -67,8 +97,8 @@ const HomePage = () => {
             <Row>
               {remainingPosts.map((post) => (
                 <Col md={6} key={post.id} className="mb-4">
-                  <Card className="post-card">
-                    <Row noGutters>
+                  <PostCard>
+                    <Row className="no-gutters">
                       <Col md={6}>
                         <Card.Img
                           src={post.thumbnail || "/api/placeholder/400/300"}
@@ -78,21 +108,25 @@ const HomePage = () => {
                       </Col>
                       <Col md={6}>
                         <Card.Body>
-                          <Card.Title className="h4 mb-3">
-                            {post.title}
-                          </Card.Title>
-                          <Card.Text className="post-excerpt mb-3">
-                            {post.excerpt}
-                          </Card.Text>
-                          <div className="post-meta mb-2">
-                            <small className="text-muted">
+                          <PostTitle>{post.title}</PostTitle>
+                          <PostExcerpt>{post.excerpt}</PostExcerpt>
+                          <MetaInfo>
+                            <small>
                               By {post.author.first_name}{" "}
-                              {post.author.last_name} |
+                              {post.author.last_name} |{" "}
                               {new Date(
                                 post.publication_date
                               ).toLocaleDateString()}
                             </small>
-                          </div>
+                            <div>
+                              <span className="upvotes mr-2">
+                                👍 {post.upvotes}
+                              </span>
+                              <span className="downvotes">
+                                👎 {post.downvotes}
+                              </span>
+                            </div>
+                          </MetaInfo>
                           <div className="post-tags mb-2">
                             {post.tags.map((tag) => (
                               <Badge
@@ -109,19 +143,6 @@ const HomePage = () => {
                               <Badge variant="info">{post.category.name}</Badge>
                             )}
                           </div>
-                          <div className="post-stats d-flex justify-content-between align-items-center">
-                            <div className="views">
-                              <small>Views: {post.view_count}</small>
-                            </div>
-                            <div className="post-votes">
-                              <span className="upvotes mr-2">
-                                👍 {post.upvotes}
-                              </span>
-                              <span className="downvotes">
-                                👎 {post.downvotes}
-                              </span>
-                            </div>
-                          </div>
                           <Link
                             to={`/posts/${post.id}`}
                             className="btn btn-primary mt-3"
@@ -131,7 +152,7 @@ const HomePage = () => {
                         </Card.Body>
                       </Col>
                     </Row>
-                  </Card>
+                  </PostCard>
                 </Col>
               ))}
             </Row>

@@ -5,7 +5,7 @@ import Header from "./components/common/Header";
 import Footer from "./components/common/Footer";
 import HomePage from "./pages/HomePage";
 import NotFoundPage from "./pages/NotFoundPage";
-import SearchNavbar from "./components/common/SearchNavbar";
+import NavbarComponent from "./components/common/Navbar";
 import Dashboard from "./components/analytics/Dashboard";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
@@ -58,7 +58,7 @@ function App() {
   return (
     <>
       <Header />
-      <SearchNavbar onSearch={handleSearch} />
+      <NavbarComponent onSearch={handleSearch} />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />

@@ -42,9 +42,6 @@ export const selectSlugAvailable = createSelector(
   (postsState) => postsState.slugAvailable || null
 );
 
-// Complex selectors remain the same
-// ...
-
 // Complex selectors
 export const selectPostById = createSelector(
   [selectPosts, (_, postId) => postId],
@@ -66,3 +63,6 @@ export const selectPostsByTag = createSelector(
   (posts, tagId) =>
     posts.filter((post) => post.tags.some((tag) => tag.id === tagId))
 );
+
+export const selectSearchResults = (state) =>
+  selectPostsState(state).searchResults;

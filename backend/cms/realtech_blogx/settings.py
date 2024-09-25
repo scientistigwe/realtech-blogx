@@ -1,3 +1,17 @@
+"""
+Django settings for RealTech BlogX project.
+
+This file contains settings for both production and development environments.
+It uses environment variables for configuration, which should be set in a .env file
+or in the deployment environment.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/4.2/topics/settings/
+
+For the full list of settings and their values, see
+https://docs.djangoproject.com/en/4.2/ref/settings/
+"""
+
 from pathlib import Path
 from datetime import timedelta
 from corsheaders.defaults import default_headers
@@ -5,20 +19,54 @@ from decouple import config, UndefinedValueError
 import os
 import sys
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Core Settings
+# SECURITY WARNING: keep the secret key used in production secret!
 try:
     SECRET_KEY = config('SECRET_KEY')
 except UndefinedValueError:
     print("ERROR: SECRET_KEY is not set.")
     sys.exit(1)
 
+# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', cast=bool, default=False)
+
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 
-# Database
+# Application definition
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'django_prometheus',
+    'corsheaders',
+    'rest_framework',
+    'djoser',
+    'cms',
+    'drf_yasg',
+    'drf_spectacular',
+]
+
+MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
+]
+
+# Database configuration
 def read_secret(secret_name):
+    """Read a secret from a file."""
     try:
         with open(f'/run/secrets/{secret_name}', 'r') as secret_file:
             return secret_file.read().strip()
@@ -36,40 +84,10 @@ DATABASES = {
     }
 }
 
-# Check if all DB settings are set
+# Validate database settings
 if not all(DATABASES['default'].values()):
     print("ERROR: One or more database settings are missing.")
     sys.exit(1)
-
-# Application definition
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django_prometheus',
-    'corsheaders',
-    'rest_framework',
-    'djoser',
-    'cms',  # Ensure 'cms' is correctly installed and available
-    'drf_yasg',
-    'drf_spectacular',
-]
-
-MIDDLEWARE = [
-    'django_prometheus.middleware.PrometheusBeforeMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django_prometheus.middleware.PrometheusAfterMiddleware',
-]
 
 # CORS settings
 CORS_ORIGIN_WHITELIST = [
@@ -90,7 +108,7 @@ CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS + [
     "http://127.0.0.1:3001",
 ]
 
-# Authentication
+# Authentication settings
 AUTH_USER_MODEL = 'cms.CustomUser'
 
 AUTHENTICATION_BACKENDS = [
@@ -100,7 +118,6 @@ AUTHENTICATION_BACKENDS = [
 # Rest Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        # 'cms.permissions.CustomJWTAuth.CookieJWTAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
@@ -114,17 +131,15 @@ REST_FRAMEWORK = {
         'user': '1000/hour',
         'anon': '100/minute',
     },
-
     'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',  # Only use JSONRenderer
+        'rest_framework.renderers.JSONRenderer',
     ),
-
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
     'DEFAULT_VERSION': 'v1',
     'ALLOWED_VERSIONS': ['v1'],
     'VERSION_PARAM': 'version',
-    'EXCEPTION_HANDLER': 'cms.exceptions.custom_exception_handler',  # Ensure correct import path
+    'EXCEPTION_HANDLER': 'cms.exceptions.custom_exception_handler',
 }
 
 # Djoser Configuration
@@ -138,11 +153,11 @@ DJOSER = {
     'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
     'USERNAME_RESET_CONFIRM_URL': 'email/reset/confirm/{uid}/{token}',
     'ACTIVATION_URL': 'activate/{uid}/{token}',
-    'SEND_ACTIVATION_EMAIL': False,  # Set to True for deployment
-    'SEND_CONFIRMATION_EMAIL': False,  # Set to True for deployment
-    'TOKEN_MODEL': None,  # Using Simple JWT, no token model required
+    'SEND_ACTIVATION_EMAIL': not DEBUG,
+    'SEND_CONFIRMATION_EMAIL': not DEBUG,
+    'TOKEN_MODEL': None,
     'SERIALIZERS': {
-        'user_create': 'cms.serializers.CustomUserCreateSerializer',  # Ensure correct path
+        'user_create': 'cms.serializers.CustomUserCreateSerializer',
         'user': 'cms.serializers.CustomUserSerializer',
         'current_user': 'cms.serializers.CustomUserSerializer',
         'user_delete': 'djoser.serializers.UserDeleteSerializer',
@@ -168,15 +183,14 @@ SIMPLE_JWT = {
     'JTI_CLAIM': 'jti',
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
-    'AUTH_COOKIE': 'access_token',  # Cookie name for the access token
+    'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_HTTP_ONLY': True,
     'AUTH_COOKIE_PATH': '/',
     'AUTH_COOKIE_SECURE': not DEBUG,
     'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
-
-# Templates
+# Templates configuration
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -193,17 +207,17 @@ TEMPLATES = [
     },
 ]
 
-# URLs
+# URLs configuration
 ROOT_URLCONF = 'realtech_blogx.urls'
 WSGI_APPLICATION = 'realtech_blogx.wsgi.application'
 
-# Static and Media files
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Security
+# Security settings
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SECURE_HSTS_SECONDS = 31536000
@@ -212,7 +226,7 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    CSRF_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
 else:
     SECURE_SSL_REDIRECT = False
@@ -226,20 +240,20 @@ CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 CSRF_USE_SESSIONS = False
 
-# Cache
+# Cache configuration
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'LOCATION': config('REDIS_URL', default='redis://127.0.0.1:6379/1'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     }
 }
 
-# Celery
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+# Celery configuration
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://redis:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://redis:6379/0')
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
@@ -250,17 +264,13 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Email Settings
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Change to smtp for production
-EMAIL_HOST = config('EMAIL_HOST')
-EMAIL_PORT = config('EMAIL_PORT', cast=int)
-EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
-
-if not all([EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, DEFAULT_FROM_EMAIL]):
-    print("ERROR: One or more email settings are missing.")
-    sys.exit(1)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' if not DEBUG else 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = config('EMAIL_HOST', default='localhost')
+EMAIL_PORT = config('EMAIL_PORT', cast=int, default=25)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool, default=False)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@example.com')
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -278,57 +288,26 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+# Swagger/OpenAPI settings
 SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
-    'TITLE': 'RealTech BlogX',
-    'DESCRIPTION': 'Your project description',
-
-    # Update SERVERS to allow multiple server entries
+    'TITLE': 'RealTech BlogX API',
+    'DESCRIPTION': 'API for RealTech BlogX',
     'SERVERS': [
-        {
-            'url': 'http://localhost:8000',
-            'description': 'Local development server'
-        },
-        # Add other environments like production if needed
-        # {'url': 'https://api.yourproductionurl.com', 'description': 'Production server'},
+        {'url': 'http://localhost:8000', 'description': 'Local development server'},
+        {'url': 'https://api.yourproductionurl.com', 'description': 'Production server'},
     ],
-
-    # Schema path (relative to base URL)
-    'SCHEMA_PATH': '/schema/',  # This will serve the OpenAPI schema in JSON format
-
-    # OpenAPI version to use
+    'SCHEMA_PATH': '/schema/',
     'OPENAPI_VERSION': '3.0.2',
-
-    # Generated schema file path
     'GENERATE_SCHEMA_PATH': 'schema.json',
-
-    # Filter operators and field name for queries
     'DEFAULT_FILTER_OPERATORS': ['iexact', 'contains', 'in', 'range', 'gt', 'lt', 'gte', 'lte'],
     'DEFAULT_FILTER_FIELD_NAME': 'filter',
-
-    # Tags for grouping endpoints in the documentation
     'TAGS': [
-        {
-            'name': 'Auth',
-            'description': 'Authentication related endpoints'
-        },
-        {
-            'name': 'Users',
-            'description': 'CRUD operations for users'
-        },
-        {
-            'name': 'Posts',
-            'description': 'Endpoints for managing blog posts'
-        },
-        {
-            'name': 'Comments',
-            'description': 'Endpoints for managing comments'
-        },
-        {
-            'name': 'Notifications',
-            'description': 'Endpoints for handling notifications'
-        },
+        {'name': 'Auth', 'description': 'Authentication related endpoints'},
+        {'name': 'Users', 'description': 'CRUD operations for users'},
+        {'name': 'Posts', 'description': 'Endpoints for managing blog posts'},
+        {'name': 'Comments', 'description': 'Endpoints for managing comments'},
+        {'name': 'Notifications', 'description': 'Endpoints for handling notifications'},
     ],
 }
 
@@ -351,5 +330,3 @@ LOGGING = {
         'level': 'WARNING',
     },
 }
-
-
