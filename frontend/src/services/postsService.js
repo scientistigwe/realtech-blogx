@@ -134,9 +134,9 @@ export const postService = {
   },
 
   // Fetch posts by tag
-  async fetchPostsByTag() {
+  async fetchPostsByTag(tagSlug) {
     try {
-      const response = await api.posts.posts_by_tag();
+      const response = await api.posts.byTag({ tag: tagSlug });
       return response.data;
     } catch (error) {
       console.error("Error fetching posts by tag:", error);
@@ -145,9 +145,9 @@ export const postService = {
   },
 
   // Fetch posts by category
-  async fetchPostsByCategory() {
+  async fetchPostsByCategory(categorySlug) {
     try {
-      const response = await api.posts.posts_by_category();
+      const response = await api.posts.byCategory({ category: categorySlug });
       return response.data;
     } catch (error) {
       console.error("Error fetching posts by category:", error);

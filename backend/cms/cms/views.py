@@ -21,6 +21,8 @@ from .serializers import (
 from cms.permissions.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly, DynamicJwtPermission
 from .pagination import StandardResultsSetPagination
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate
+from django.core.exceptions import ObjectDoesNotExist
 
 logger = logging.getLogger(__name__)
 
@@ -111,41 +113,38 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         Returns:
             dict: User data extracted from the token.
         """
+    def get_user_from_token(self, access_token):
         try:
             logger.debug("Attempting to retrieve user data from token")
             token = AccessToken(access_token)
             user_id = token['user_id']
             user = User.objects.get(id=user_id)
             logger.info(f"User retrieved successfully. ID: {user.id}, Username: {user.username}")
-            print(user)
 
-            # Create a dictionary with only the attributes that actually exist
             user_data = {
-                'id': getattr(user, 'id', None),
-                'username': getattr(user, 'username', None),
-                'email': getattr(user, 'email', None),
-                'first_name': getattr(user, 'first_name', None),
-                'last_name': getattr(user, 'last_name', None),
-                'bio': getattr(user, 'bio', None),
-                'website': getattr(user, 'website', None),
-                'location': getattr(user, 'location', None),
-                'profile_picture': getattr(user, 'profile_picture', None),
-                'social_profiles': getattr(user, 'social_profiles', None),
-                'last_active': getattr(user, 'last_active', None),
-                'is_author': getattr(user, 'is_author', False),
-                'role': getattr(user, 'role', None),
-                'is_superuser': getattr(user, 'is_superuser', False),
-                'is_staff': getattr(user, 'is_staff', False),
-                'is_active': getattr(user, 'is_active', False),
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
                 'is_authenticated': True
             }
 
+            # Add optional fields if they exist
+            optional_fields = ['bio', 'website', 'location', 'profile_picture', 'social_profiles', 'last_active', 'is_author', 'role']
+            for field in optional_fields:
+                if hasattr(user, field):
+                    user_data[field] = getattr(user, field)
+
+            user_data['is_superuser'] = user.is_superuser
+            user_data['is_staff'] = user.is_staff
+            user_data['is_active'] = user.is_active
+
             return user_data
 
-        except AttributeError as e:
-            logger.warning(f"Missing attribute while retrieving user data: {str(e)}")
+        except ObjectDoesNotExist:
+            logger.error(f"User with id {user_id} does not exist")
             return None
-
         except Exception as e:
             logger.error(f"Unexpected error retrieving user data: {str(e)}")
             return None
@@ -192,6 +191,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         responses={200: CustomUserSerializer}
     )
     @action(detail=False, methods=['get'])
+
     def me(self, request):
         """
         Retrieve information about the current authenticated user.
@@ -296,7 +296,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         password = request.GET.get('password')
 
         # Authenticate the user
-        user = authenticate(username=username, password=password)
+        user = authenticate(request, username=username, password=password)
 
         if user is None:
             return Response({'is_admin': False, 'message': 'Invalid credentials'})
@@ -313,7 +313,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         logger.debug(f"Admin status: {is_admin}")
 
         return Response({'is_admin': is_admin, 'message': message})
-
+    
 class TagViewSet(BaseModelViewSet):
     """
     ViewSet for Tag model operations.
@@ -525,7 +525,7 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def posts_by_category(self, request):
         logger.info("Retrieving posts by category")
-        category_slug = request.query_params.get('slug')
+        category_slug = request.query_params.get('category')
         if not category_slug:
             logger.error("Category slug is required")
             return Response({'error': 'Category slug is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -535,7 +535,7 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def posts_by_tag(self, request):
         logger.info("Retrieving posts by tag")
-        tag_slug = request.query_params.get('slug')
+        tag_slug = request.query_params.get('tag')
         if not tag_slug:
             logger.error("Tag slug is required")
             return Response({'error': 'Tag slug is required'}, status=status.HTTP_400_BAD_REQUEST)

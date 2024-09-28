@@ -1,0 +1,107 @@
+import { createSlice } from "@reduxjs/toolkit";
+import {
+  fetchTags,
+  createTag,
+  updateTag,
+  deleteTag,
+  fetchMostUsedTags,
+} from "./tagThunks"; // Import tag thunks
+
+// Initial state for the tags slice
+const initialState = {
+  tags: [], // List of tags
+  currentTag: null, // Single tag details
+  count: 0, // Total number of tags
+  currentPage: 1, // Pagination: current page
+  status: "idle", // Status of async operations (loading, succeeded, failed)
+  error: null, // Error message if any
+};
+
+const tagSlice = createSlice({
+  name: "tags",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      // Fetching all tags
+      .addCase(fetchTags.pending, (state) => {
+        state.status = "loading";
+        state.error = null; // Clear previous errors on new fetch
+      })
+      .addCase(fetchTags.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.tags =
+          action.payload?.results?.map((tag) => ({
+            id: tag.id,
+            name: tag.name,
+            // Add any other necessary tag fields
+          })) ?? [];
+        state.count = action.payload?.count || 0;
+        state.currentPage = action.payload?.previous
+          ? state.currentPage + 1
+          : 1;
+      })
+      .addCase(fetchTags.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error?.message || "Failed to fetch tags";
+      })
+
+      // Creating a new tag
+      .addCase(createTag.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.tags.push({
+            id: action.payload.id,
+            name: action.payload.name,
+            // Add any other necessary tag fields
+          });
+          state.count++;
+        }
+      })
+
+      // Updating a tag
+      .addCase(updateTag.fulfilled, (state, action) => {
+        const index = state.tags.findIndex(
+          (tag) => tag.id === action.payload?.id
+        );
+        if (index !== -1 && action.payload) {
+          state.tags[index] = {
+            id: action.payload.id,
+            name: action.payload.name,
+            // Add any other necessary tag fields
+          };
+        }
+        state.currentTag = action.payload || null;
+      })
+
+      // Deleting a tag
+      .addCase(deleteTag.fulfilled, (state, action) => {
+        state.tags = state.tags.filter((tag) => tag.id !== action.payload);
+        state.count--;
+        if (state.currentTag?.id === action.payload) {
+          state.currentTag = null; // Clear current tag if deleted
+        }
+      })
+
+      // Fetching most used tags
+      .addCase(fetchMostUsedTags.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.tags =
+          action.payload?.results?.map((tag) => ({
+            id: tag.id,
+            name: tag.name,
+            // Add any other necessary tag fields
+          })) ?? [];
+      });
+  },
+});
+
+// Exporting the default reducer
+export default tagSlice.reducer;
+
+// Exporting selectors to access the state
+export const selectTags = (state) => state.tags.tags;
+export const selectTagsCount = (state) => state.tags.count;
+export const selectCurrentTag = (state) => state.tags.currentTag;
+export const selectTagsStatus = (state) => state.tags.status;
+export const selectTagsError = (state) => state.tags.error;
+export const selectCurrentPage = (state) => state.tags.currentPage;

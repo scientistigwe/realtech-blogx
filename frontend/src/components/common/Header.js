@@ -11,13 +11,15 @@ import {
 import { toast } from "react-toastify";
 import styled from "styled-components";
 
+// Styled Components
 const HeaderContainer = styled.header`
-  background-color: #333;
-  color: #fff;
+  background-color: #dcdcdc; /* White background */
+  color: #000000; /* Black text */
   padding: 1rem 0;
   position: sticky;
   top: 0;
   z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for separation */
 `;
 
 const HeaderContent = styled.div`
@@ -31,7 +33,6 @@ const HeaderContent = styled.div`
 const Logo = styled(Link)`
   display: flex;
   align-items: center;
-  color: #fff;
   text-decoration: none;
 
   .brand-logo {
@@ -42,8 +43,7 @@ const Logo = styled(Link)`
   .brand-name {
     font-size: 2.5rem;
     font-weight: 600;
-    color: #fff;
-    opacity: 0.8;
+    color: #ff7f00; /* Orange color for "RealTech BlogX" */
   }
 `;
 
@@ -52,7 +52,7 @@ const NavLinks = styled.nav`
   align-items: center;
 
   .nav-link {
-    color: #fff;
+    color: #000000; /* Black text */
     text-decoration: none;
     margin-left: 1.5rem;
     font-size: 1rem;
@@ -60,8 +60,12 @@ const NavLinks = styled.nav`
     transition: color 0.3s ease;
 
     &:hover {
-      color: #ccc;
+      color: #ff7f00; /* Orange on hover */
     }
+  }
+
+  .nav-link-admin {
+    color: #ff7f00; /* Orange for admin-related links */
   }
 `;
 
@@ -116,7 +120,7 @@ const Header = () => {
           <span className="brand-name">RealTech BlogX</span>
         </Logo>
         <NavLinks>
-          <Link className="nav-link home-button" to="/" aria-label="Home">
+          <Link className="nav-link" to="/" aria-label="Home">
             Home
           </Link>
           {isAuthenticated ? (
@@ -137,7 +141,7 @@ const Header = () => {
               </Link>
               {isAdmin && (
                 <Link
-                  className="nav-link"
+                  className="nav-link nav-link-admin"
                   to="/draft-posts"
                   aria-label="Draft Posts"
                 >
@@ -161,7 +165,7 @@ const Header = () => {
                 Sign Up
               </Link>
               <Link
-                className="nav-link"
+                className="nav-link nav-link-admin"
                 to="/admin-login"
                 aria-label="Admin Login"
               >
@@ -171,7 +175,7 @@ const Header = () => {
           )}
           {isAdmin && (
             <button
-              className="nav-link"
+              className="nav-link nav-link-admin"
               onClick={handleFetchAdminStatus}
               aria-label="Admin Dashboard"
             >

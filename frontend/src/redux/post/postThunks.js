@@ -131,9 +131,9 @@ export const searchPosts = createAsyncThunk(
 
 export const fetchPostsByTag = createAsyncThunk(
   "posts/fetchPostsByTag",
-  async (_, { rejectWithValue }) => {
+  async (tagSlug, { rejectWithValue }) => {
     try {
-      return await postService.fetchPostsByTag();
+      return await postService.fetchPostsByTag(tagSlug);
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -142,9 +142,9 @@ export const fetchPostsByTag = createAsyncThunk(
 
 export const fetchPostsByCategory = createAsyncThunk(
   "posts/fetchPostsByCategory",
-  async (_, { rejectWithValue }) => {
+  async (categorySlug, { rejectWithValue }) => {
     try {
-      return await postService.fetchPostsByCategory();
+      return await postService.fetchPostsByCategory(categorySlug);
     } catch (error) {
       return rejectWithValue(error.message);
     }

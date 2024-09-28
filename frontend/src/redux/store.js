@@ -1,28 +1,27 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage"; // defaults to localStorage for web
+import storage from "redux-persist/lib/storage";
 import { combineReducers } from "@reduxjs/toolkit";
 import postReducer from "./post/postSlice";
 import authReducer from "./auth/authSlice";
 import categoryReducer from "./category/categorySlice";
 import usersReducer from "./user/usersSlice";
+import tagReducer from "./tag/tagSlice";
 
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth"], // Persist only the auth state
+  whitelist: ["auth"],
 };
 
-// Combine reducers
 const rootReducer = combineReducers({
   posts: postReducer,
   auth: authReducer,
   categories: categoryReducer,
   users: usersReducer,
-  // Add other reducers here if needed});
+  tags: tagReducer, // Make sure this line is present
 });
 
-// Create persisted reducer
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 const store = configureStore({

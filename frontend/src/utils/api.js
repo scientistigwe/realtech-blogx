@@ -12,6 +12,7 @@ class Api {
       timeout: 10000,
     });
     this.setupInterceptors();
+    this.generateCategoryMethods();
   }
 
   setupInterceptors() {
@@ -200,6 +201,21 @@ class Api {
   }
   delete(url, config = {}) {
     return this.request("delete", url, null, config);
+  }
+
+  generateCategoryMethods() {
+    for (const [category, endpoints] of Object.entries(apiEndpoints)) {
+      this[category] = {};
+      for (const [key, value] of Object.entries(endpoints)) {
+        if (typeof value === "function") {
+          this[category][key] = (id, data) =>
+            this[this.getHttpMethod(key)](value(id), data);
+        } else {
+          this[category][key] = (data) =>
+            this[this.getHttpMethod(key)](value, data);
+        }
+      }
+    }
   }
 
   // Token management

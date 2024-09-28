@@ -15,10 +15,26 @@ class CustomUserSerializer(serializers.ModelSerializer):
     This serializer is used to serialize and deserialize the CustomUser model,
     which extends the default Django User model with additional fields.
     """
+    profile_picture = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'bio', 'website', 'location', 'profile_picture', 'social_profiles', 'last_active', 'is_author', 'role']
         read_only_fields = ['id', 'last_active']
+
+    def get_profile_picture(self, obj):
+        """
+        Get the URL of the profile picture if it exists.
+
+        Args:
+            obj (CustomUser): The CustomUser instance.
+
+        Returns:
+            str or None: The URL of the profile picture if it exists, None otherwise.
+        """
+        if obj.profile_picture and hasattr(obj.profile_picture, 'url'):
+            return obj.profile_picture.url
+        return None  # or return a default image URL if you prefer
 
 class ContactMessageSerializer(serializers.Serializer):
     """
