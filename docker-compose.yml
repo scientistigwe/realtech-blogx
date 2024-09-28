@@ -10,18 +10,7 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - db
       - elasticsearch
-    networks:
-      - my_network
-
-  db:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: ${DATABASE_USER}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     networks:
       - my_network
 
@@ -82,7 +71,6 @@ services:
       - my_network
 
 volumes:
-  postgres_data:
   esdata:
 
 networks:
